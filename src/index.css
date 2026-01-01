@@ -1,0 +1,84 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 45 30% 97%;
+    --foreground: 20 15% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 20 15% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 15% 15%;
+    --primary: 16 65% 55%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 145 25% 75%;
+    --secondary-foreground: 20 15% 15%;
+    --muted: 45 20% 92%;
+    --muted-foreground: 20 10% 45%;
+    --accent: 145 25% 85%;
+    --accent-foreground: 20 15% 15%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 30 15% 85%;
+    --input: 30 15% 85%;
+    --ring: 16 65% 55%;
+    --radius: 0.75rem;
+
+    --cream: 45 30% 97%;
+    --terracotta: 16 65% 55%;
+    --terracotta-light: 16 65% 70%;
+    --sage: 145 25% 55%;
+    --sage-light: 145 25% 85%;
+    --warm-gray: 30 10% 55%;
+  }
+
+  .dark {
+    --background: 20 15% 10%;
+    --foreground: 45 20% 95%;
+    --card: 20 15% 14%;
+    --card-foreground: 45 20% 95%;
+    --popover: 20 15% 14%;
+    --popover-foreground: 45 20% 95%;
+    --primary: 16 65% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 145 20% 25%;
+    --secondary-foreground: 45 20% 95%;
+    --muted: 20 15% 20%;
+    --muted-foreground: 30 15% 60%;
+    --accent: 145 20% 20%;
+    --accent-foreground: 45 20% 95%;
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 20 15% 25%;
+    --input: 20 15% 25%;
+    --ring: 16 65% 60%;
+
+    --cream: 20 15% 10%;
+    --terracotta: 16 65% 60%;
+    --terracotta-light: 16 65% 75%;
+    --sage: 145 25% 45%;
+    --sage-light: 145 20% 25%;
+    --warm-gray: 30 10% 45%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+  h1, h2, h3, h4 {
+    @apply font-display;
+  }
+}
+
+@layer utilities {
+  .hover-scale {
+    @apply transition-transform duration-200 hover:scale-105;
+  }
+}
