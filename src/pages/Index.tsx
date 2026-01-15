@@ -40,13 +40,45 @@ export default function Index() {
       <Header />
       
       <main className="container py-8">
-        <section className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">
-            {showFavorites ? "Избранные рецепты" : "Все рецепты"}
-          </h1>
-          <p className="text-muted-foreground">
-            {showFavorites ? "Ваши любимые рецепты в одном месте" : "Найдите идеальный рецепт для любого случая"}
-          </p>
+        <section className="mb-10">
+          {showFavorites ? (
+            <>
+              <h1 className="font-display text-3xl md:text-4xl font-bold mb-2">
+                Избранные рецепты
+              </h1>
+              <p className="text-muted-foreground">
+                Ваши любимые рецепты в одном месте
+              </p>
+            </>
+          ) : (
+            <div className="relative bg-gradient-to-br from-card via-card to-accent/20 rounded-2xl p-8 md:p-12 border border-border/50 shadow-sm overflow-hidden">
+              <div className="absolute top-4 left-6 text-6xl md:text-8xl text-primary/10 font-serif leading-none select-none">
+                «
+              </div>
+              <div className="absolute bottom-4 right-6 text-6xl md:text-8xl text-primary/10 font-serif leading-none select-none">
+                »
+              </div>
+              <blockquote className="relative z-10">
+                <p className="font-display text-xl md:text-2xl lg:text-3xl font-medium text-foreground leading-relaxed mb-4">
+                  <span className="text-primary">Вы должны любить</span> то, что едите, 
+                  <br className="hidden md:block" />
+                  или любить человека, которому готовите.
+                </p>
+                <p className="font-body text-lg md:text-xl text-muted-foreground italic mb-6">
+                  Приготовление еды – это акт любви.
+                </p>
+                <footer className="flex items-center gap-3">
+                  <div className="h-px flex-1 max-w-16 bg-primary/30"></div>
+                  <cite className="font-display text-sm md:text-base text-foreground/80 not-italic font-semibold tracking-wide">
+                    Ален Шапель
+                  </cite>
+                  <span className="text-muted-foreground text-sm">
+                    шеф-повар
+                  </span>
+                </footer>
+              </blockquote>
+            </div>
+          )}
         </section>
 
         <section className="space-y-4 mb-8">
