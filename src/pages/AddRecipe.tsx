@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -67,12 +68,16 @@ export default function AddRecipe() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.category) {
+      toast.error("Пожалуйста, выберите категорию");
+      return;
+    }
     await createRecipe.mutateAsync({
       ...formData,
       ingredients: formData.ingredients.split("\n").filter(Boolean),
       instructions: formData.instructions.split("\n").filter(Boolean),
       tags: formData.tags.split(",").map((t) => t.trim()).filter(Boolean),
-      screenshots: pendingScreenshots.length > 0 ? pendingScreenshots : undefined,
+      screenshots: pendingScreenshots.length > 0 ? pendingScreenshots : [],
     } as any);
     navigate("/");
   };
