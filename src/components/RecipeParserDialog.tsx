@@ -120,19 +120,12 @@ export function RecipeParserDialog({ onParsed }: RecipeParserDialogProps) {
 
       const parsed = data as ParsedRecipe;
 
-      // If no dish photo detected, add the original image as a screenshot
-      let screenshotToAdd: string | undefined;
-      if (!parsed.has_dish_photo) {
-        screenshotToAdd = imagePreview ?? undefined;
-      }
+      // Always add the photo as a screenshot (base64 can't be stored as image URL)
+      const screenshotToAdd = imagePreview ?? undefined;
 
       applyParsed(parsed, screenshotToAdd);
       setOpen(false);
-      toast.success(
-        parsed.has_dish_photo
-          ? "Рецепт распознан, фото добавлено как главное!"
-          : "Рецепт распознан, фото добавлено в скриншоты!"
-      );
+      toast.success("Рецепт распознан, фото добавлено в скриншоты!");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Ошибка при распознавании фото");
     } finally {
@@ -151,7 +144,7 @@ export function RecipeParserDialog({ onParsed }: RecipeParserDialogProps) {
       difficulty: parsed.difficulty ?? "",
       tags: (parsed.tags ?? []).join(", "),
       notes: parsed.notes ?? "",
-      image: parsed.has_dish_photo ? imagePreview ?? "" : "",
+      image: "", // never store base64 as image URL
       screenshotToAdd: screenshotDataUrl,
     });
   };
