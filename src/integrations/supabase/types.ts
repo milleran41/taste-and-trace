@@ -42,6 +42,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           difficulty: string | null
+          display_order: number
           id: string
           image: string | null
           ingredients: Json | null
@@ -60,6 +61,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           difficulty?: string | null
+          display_order?: number
           id?: string
           image?: string | null
           ingredients?: Json | null
@@ -78,6 +80,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           difficulty?: string | null
+          display_order?: number
           id?: string
           image?: string | null
           ingredients?: Json | null

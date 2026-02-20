@@ -10,7 +10,7 @@ export function useRecipes(category?: string) {
       let query = supabase
         .from("recipes")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("display_order", { ascending: true });
 
       if (category && category !== "all") {
         query = query.eq("category", category);
@@ -48,7 +48,7 @@ export function useFavoriteRecipes() {
         .from("recipes")
         .select("*")
         .eq("is_favorite", true)
-        .order("created_at", { ascending: false });
+        .order("display_order", { ascending: true });
 
       if (error) throw error;
       return data as Recipe[];
@@ -161,6 +161,58 @@ export function useToggleFavorite() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recipes"] });
+    },
+  });
+}
+
+export function useSwapRecipeOrder() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ recipeA, recipeB }: { recipeA: { id: string; display_order: number }; recipeB: { id: string; display_order: number } }) => {
+      // Swap display_order values
+      const { error: e1 } = await supabase.from("recipes").update({ display_order: recipeB.display_order }).eq("id", recipeA.id);
+      if (e1) throw e1;
+      const { error: e2 } = await supabase.from("recipes").update({ display_order: recipeA.display_order }).eq("id", recipeB.id);
+      if (e2) throw e2;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["recipes"] });
+    },
+    onError: () => {
+      toast.error("Ошибка при перемещении рецепта");
+    },
+  });
+}
+
+export function useMoveRecipeToCategory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ recipeId, newCategory }: { recipeId: string; newCategory: string }) => {
+      // Get max display_order in target category
+      const { data: maxData } = await supabase
+        .from("recipes")
+        .select("display_order")
+        .eq("category", newCategory)
+        .order("display_order", { ascending: false })
+        .limit(1);
+
+      const newOrder = maxData && maxData.length > 0 ? maxData[0].display_order + 1 : 0;
+
+      const { error } = await supabase
+        .from("recipes")
+        .update({ category: newCategory, display_order: newOrder })
+        .eq("id", recipeId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["recipes"] });
+      toast.success("Рецепт перемещён в другую категорию");
+    },
+    onError: () => {
+      toast.error("Ошибка при перемещении рецепта");
     },
   });
 }
