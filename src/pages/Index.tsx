@@ -4,6 +4,7 @@ import { Header } from "@/components/Header";
 import { SearchBar } from "@/components/SearchBar";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { RecipeGrid } from "@/components/RecipeGrid";
+import { DndRecipeGrid } from "@/components/DndRecipeGrid";
 import { useRecipes, useFavoriteRecipes } from "@/hooks/useRecipes";
 
 export default function Index() {
@@ -91,7 +92,15 @@ export default function Index() {
           )}
         </section>
 
-        <RecipeGrid recipes={filteredRecipes} isLoading={isLoading} />
+        {!showFavorites && selectedCategory !== "all" && !searchQuery.trim() ? (
+          <DndRecipeGrid
+            recipes={filteredRecipes}
+            isLoading={isLoading}
+            selectedCategory={selectedCategory}
+          />
+        ) : (
+          <RecipeGrid recipes={filteredRecipes} isLoading={isLoading} />
+        )}
       </main>
     </div>
   );
