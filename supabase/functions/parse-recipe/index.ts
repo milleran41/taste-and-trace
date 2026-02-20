@@ -25,7 +25,7 @@ serve(async (req) => {
 - instructions (array of strings): step-by-step cooking instructions
 - cooking_time (string): total cooking time (e.g. "30 минут", "1 час")
 - servings (number): number of servings
-- difficulty (string): difficulty level in the SAME language as the recipe (e.g. for Russian: "Легко"/"Средне"/"Сложно"; for English: "Easy"/"Medium"/"Hard")
+- difficulty (string): difficulty level, MUST be one of exactly these values: "easy", "medium", "hard" (always in English lowercase)
 - tags (array of strings): relevant tags/keywords in the same language
 - notes (string): any additional notes or tips
 - has_dish_photo (boolean): true if the image clearly shows the FINISHED dish/food that can serve as the main recipe photo, false if it's just text/packaging/ingredients/handwriting
@@ -122,6 +122,16 @@ CRITICAL RULES:
     }
 
     const parsed = JSON.parse(jsonMatch[0]);
+
+    // Normalize difficulty to allowed DB values
+    const difficultyMap: Record<string, string> = {
+      "легко": "easy", "easy": "easy", "простой": "easy", "просто": "easy",
+      "средне": "medium", "medium": "medium", "средний": "medium",
+      "сложно": "hard", "hard": "hard", "сложный": "hard",
+    };
+    if (parsed.difficulty) {
+      parsed.difficulty = difficultyMap[parsed.difficulty.toLowerCase()] || "medium";
+    }
 
     return new Response(JSON.stringify(parsed), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
