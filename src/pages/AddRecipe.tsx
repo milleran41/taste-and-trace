@@ -118,7 +118,7 @@ export default function AddRecipe() {
               )}
               <div className="grid grid-cols-2 gap-4">
                 <div><Label>Категория *</Label><Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v })}><SelectTrigger><SelectValue placeholder="Выберите" /></SelectTrigger><SelectContent>{categories?.map((c) => (<SelectItem key={c.id} value={c.id}>{c.label}</SelectItem>))}</SelectContent></Select></div>
-                <div><Label>Сложность</Label><Select value={formData.difficulty} onValueChange={(v) => setFormData({ ...formData, difficulty: v })}><SelectTrigger><SelectValue placeholder="Выберите" /></SelectTrigger><SelectContent><SelectItem value="Легко">Легко</SelectItem><SelectItem value="Средне">Средне</SelectItem><SelectItem value="Сложно">Сложно</SelectItem></SelectContent></Select></div>
+                <div><Label>Сложность</Label><Select value={formData.difficulty} onValueChange={(v) => setFormData({ ...formData, difficulty: v })}><SelectTrigger><SelectValue placeholder="Выберите" /></SelectTrigger><SelectContent><SelectItem value="easy">Легко</SelectItem><SelectItem value="medium">Средне</SelectItem><SelectItem value="hard">Сложно</SelectItem></SelectContent></Select></div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div><Label htmlFor="time">Время</Label><Input id="time" placeholder="30 минут" value={formData.cooking_time} onChange={(e) => setFormData({ ...formData, cooking_time: e.target.value })} /></div>
