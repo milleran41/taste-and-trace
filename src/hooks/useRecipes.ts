@@ -75,6 +75,7 @@ export function useCreateRecipe() {
           notes: recipe.notes,
           tags: recipe.tags,
           image: recipe.image,
+          screenshots: (recipe as any).screenshots || [],
         })
         .select()
         .single();
