@@ -26,17 +26,24 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
     <Link to={`/recipe/${recipe.id}`}>
       <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 h-full">
         <div className="relative aspect-[4/3] overflow-hidden bg-muted">
-          {recipe.image ? (
-            <img
-              src={recipe.image}
-              alt={recipe.title}
-              className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-              <span className="text-4xl">🍽️</span>
-            </div>
-          )}
+          {(() => {
+            const screenshots = Array.isArray(recipe.screenshots) ? recipe.screenshots : [];
+            const mainImage = recipe.image || (screenshots.length > 0 ? String(screenshots[0]) : null);
+            if (mainImage) {
+              return (
+                <img
+                  src={mainImage}
+                  alt={recipe.title}
+                  className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                />
+              );
+            }
+            return (
+              <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                <span className="text-4xl">🍽️</span>
+              </div>
+            );
+          })()}
           <Button
             variant="ghost"
             size="icon"

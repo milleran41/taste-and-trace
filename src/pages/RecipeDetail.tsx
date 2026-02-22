@@ -70,6 +70,8 @@ export default function RecipeDetail() {
   const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
   const instructions = Array.isArray(recipe.instructions) ? recipe.instructions : [];
   const tags = Array.isArray(recipe.tags) ? recipe.tags : [];
+  const screenshots = Array.isArray(recipe.screenshots) ? recipe.screenshots.map(String) : [];
+  const mainImage = recipe.image || (screenshots.length > 0 ? screenshots[0] : null);
 
   return (
     <div className="min-h-screen bg-background">
@@ -125,10 +127,10 @@ export default function RecipeDetail() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
-            {recipe.image ? (
+            {mainImage ? (
               <div className="aspect-video overflow-hidden rounded-xl">
                 <img
-                  src={recipe.image}
+                  src={mainImage}
                   alt={recipe.title}
                   className="w-full h-full object-cover"
                 />
@@ -136,6 +138,20 @@ export default function RecipeDetail() {
             ) : (
               <div className="aspect-video rounded-xl bg-muted flex items-center justify-center">
                 <ChefHat className="h-16 w-16 text-muted-foreground" />
+              </div>
+            )}
+
+            {screenshots.length > 1 && (
+              <div className="flex flex-wrap gap-2">
+                {screenshots.slice(1).map((src, i) => (
+                  <img
+                    key={i}
+                    src={src}
+                    alt={`Скриншот ${i + 2}`}
+                    className="h-24 w-24 object-cover rounded-lg border cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => window.open(src, '_blank')}
+                  />
+                ))}
               </div>
             )}
 
