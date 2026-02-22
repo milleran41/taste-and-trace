@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { useCategories } from "@/hooks/useCategories";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CategoryManager } from "@/components/CategoryManager";
 
 interface CategoryFilterProps {
   selectedCategory: string;
@@ -22,7 +23,8 @@ export function CategoryFilter({ selectedCategory, onCategoryChange }: CategoryF
   }
 
   return (
-    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+    <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+      <CategoryManager />
       <Button
         variant={selectedCategory === "all" ? "default" : "outline"}
         size="sm"
