@@ -98,21 +98,41 @@ export function useUpdateRecipe() {
 
   return useMutation({
     mutationFn: async ({ id, recipe }: { id: string; recipe: Partial<RecipeFormData> }) => {
+      // If category changed, compute new display_order for the target category
+      let displayOrder: number | undefined;
+      if (recipe.category) {
+        const { data: current } = await supabase.from("recipes").select("category").eq("id", id).single();
+        if (current && current.category !== recipe.category) {
+          const { data: maxData } = await supabase
+            .from("recipes")
+            .select("display_order")
+            .eq("category", recipe.category)
+            .order("display_order", { ascending: false })
+            .limit(1);
+          displayOrder = maxData && maxData.length > 0 ? maxData[0].display_order + 1 : 0;
+        }
+      }
+
+      const updateData: Record<string, unknown> = {
+        title: recipe.title,
+        description: recipe.description,
+        category: recipe.category,
+        cooking_time: recipe.cooking_time,
+        difficulty: recipe.difficulty,
+        servings: recipe.servings,
+        ingredients: recipe.ingredients,
+        instructions: recipe.instructions,
+        notes: recipe.notes,
+        tags: recipe.tags,
+        image: recipe.image,
+      };
+      if (displayOrder !== undefined) {
+        updateData.display_order = displayOrder;
+      }
+
       const { data, error } = await supabase
         .from("recipes")
-        .update({
-          title: recipe.title,
-          description: recipe.description,
-          category: recipe.category,
-          cooking_time: recipe.cooking_time,
-          difficulty: recipe.difficulty,
-          servings: recipe.servings,
-          ingredients: recipe.ingredients,
-          instructions: recipe.instructions,
-          notes: recipe.notes,
-          tags: recipe.tags,
-          image: recipe.image,
-        })
+        .update(updateData)
         .eq("id", id)
         .select()
         .single();
