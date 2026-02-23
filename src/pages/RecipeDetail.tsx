@@ -17,11 +17,14 @@ import { useCategories } from "@/hooks/useCategories";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
+import { MeasuresModal } from "@/components/MeasuresModal";
+import { Scale } from "lucide-react";
 
 export default function RecipeDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [measuresOpen, setMeasuresOpen] = useState(false);
 
   const { data: recipe, isLoading } = useRecipe(id!);
   const { data: categories } = useCategories();
@@ -87,8 +90,16 @@ export default function RecipeDetail() {
             <Button
               variant="ghost"
               size="icon"
+              onClick={() => setMeasuresOpen((v) => !v)}
+              title="Меры"
+            >
+              <Scale className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={handleToggleFavorite}
-              className={cn(recipe.is_favorite && "text-red-500")}
+              className={cn(recipe.is_favorite && "text-destructive")}
             >
               <Heart className={cn("h-5 w-5", recipe.is_favorite && "fill-current")} />
             </Button>
@@ -246,6 +257,7 @@ export default function RecipeDetail() {
           </div>
         </div>
       </div>
+      <MeasuresModal open={measuresOpen} onClose={() => setMeasuresOpen(false)} />
     </div>
   );
 }
