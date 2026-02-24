@@ -1,1 +1,10 @@
 project_id = "xbywiwobovzxybzsubhs"
+
+[functions.parse-recipe]
+verify_jwt = false
+
+[functions.recipe-assistant]
+verify_jwt = false
+
+[functions.import-recipe-url]
+verify_jwt = false
