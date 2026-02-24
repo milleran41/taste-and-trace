@@ -18,13 +18,15 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import { MeasuresModal } from "@/components/MeasuresModal";
-import { Scale } from "lucide-react";
+import { AssistantModal } from "@/components/AssistantModal";
+import { Scale, Bot } from "lucide-react";
 
 export default function RecipeDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [measuresOpen, setMeasuresOpen] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
 
   const { data: recipe, isLoading } = useRecipe(id!);
   const { data: categories } = useCategories();
@@ -87,6 +89,14 @@ export default function RecipeDetail() {
             </Link>
           </Button>
           <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setAssistantOpen((v) => !v)}
+              title="Помощник"
+            >
+              <Bot className="h-5 w-5" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -258,6 +268,13 @@ export default function RecipeDetail() {
         </div>
       </div>
       <MeasuresModal open={measuresOpen} onClose={() => setMeasuresOpen(false)} />
+      {recipe && (
+        <AssistantModal
+          open={assistantOpen}
+          onClose={() => setAssistantOpen(false)}
+          recipe={recipe}
+        />
+      )}
     </div>
   );
 }
