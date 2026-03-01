@@ -6,6 +6,15 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Detect if user is asking about ingredient substitution
+function isSubstitutionQuery(message: string): boolean {
+  const patterns = [
+    /замен/i, /заменить/i, /вместо/i, /аналог/i, /альтернатив/i,
+    /без\s+\w+/i, /нет\s+\w+/i, /чем\s+заменить/i, /substitut/i, /replace/i,
+  ];
+  return patterns.some((p) => p.test(message));
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -27,7 +36,45 @@ serve(async (req) => {
     const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients.join(", ") : "";
     const instructions = Array.isArray(recipe.instructions) ? recipe.instructions.join("\n") : "";
 
-    const systemPrompt = `Ты — кулинарный помощник. Ты отвечаешь ТОЛЬКО на вопросы, связанные с конкретным рецептом, который тебе передан. Не придумывай ингредиенты, которых нет в рецепте.
+    const needsSearch = isSubstitutionQuery(message);
+
+    let systemPrompt: string;
+
+    if (needsSearch) {
+      // For substitution queries — instruct to use web search and provide structured answer
+      systemPrompt = `Ты — кулинарный эксперт с доступом к интернету. Тебе задан вопрос о замене ингредиентов в рецепте.
+
+Текущий рецепт:
+Название: ${recipe.title}
+Ингредиенты: ${ingredients}
+Приготовление: ${instructions}
+
+ОБЯЗАТЕЛЬНЫЕ ПРАВИЛА:
+1. Используй поиск в интернете для нахождения актуальных замен
+2. НЕ придумывай замены — только проверенные из кулинарных источников
+3. Указывай источники информации
+4. Форматируй ответ СТРОГО по шаблону:
+
+**Замена для [ингредиент]:**
+
+🔄 **Варианты замены:**
+- [замена 1] — [пропорция]
+- [замена 2] — [пропорция]
+
+✅ **Подходит для:**
+- [случай 1]
+- [случай 2]
+
+❌ **Не подходит для:**
+- [случай 1]
+
+📌 **Источники:**
+- [название источника]
+
+Если поиск не дал результатов — напиши: "Не удалось найти проверенные замены в интернете."
+НЕ генерируй ответ без данных из поиска.`;
+    } else {
+      systemPrompt = `Ты — кулинарный помощник. Ты отвечаешь на вопросы, связанные с конкретным рецептом.
 
 Текущий рецепт:
 Название: ${recipe.title}
@@ -40,10 +87,10 @@ serve(async (req) => {
 
 Правила:
 - Давай короткие, практичные ответы
-- Отвечай структурированно: заголовок, краткий ответ, при необходимости — список шагов
+- Отвечай структурированно с markdown
 - Отвечай на языке пользователя
-- Не упоминай другие рецепты
-- Используй markdown для форматирования`;
+- Используй поиск в интернете когда нужно найти дополнительную информацию`;
+    }
 
     const messages = [
       { role: "system", content: systemPrompt },
@@ -51,17 +98,29 @@ serve(async (req) => {
       { role: "user", content: message },
     ];
 
+    // Build request body — use google_search tool for grounded answers
+    const requestBody: any = {
+      model: "google/gemini-2.5-flash",
+      messages,
+      stream: true,
+    };
+
+    // Enable Gemini's built-in google_search tool for web grounding
+    if (needsSearch) {
+      requestBody.tools = [
+        { type: "function", function: { name: "google_search", description: "Search the web for information", parameters: { type: "object", properties: { query: { type: "string" } }, required: ["query"] } } }
+      ];
+    }
+
+    console.log("Recipe assistant request, needsSearch:", needsSearch, "message:", message.slice(0, 100));
+
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages,
-        stream: true,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {

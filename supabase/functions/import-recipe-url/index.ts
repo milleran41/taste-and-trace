@@ -17,8 +17,11 @@ function extractYouTubeVideoId(url: string): string | null {
   return null;
 }
 
+function extractTikTokUrl(url: string): boolean {
+  return /tiktok\.com/i.test(url);
+}
+
 async function fetchYouTubeContent(videoId: string): Promise<string> {
-  // Fetch the watch page to get title, description from meta tags
   const pageUrl = `https://www.youtube.com/watch?v=${videoId}`;
   const resp = await fetch(pageUrl, {
     headers: {
@@ -28,41 +31,32 @@ async function fetchYouTubeContent(videoId: string): Promise<string> {
   });
   const html = await resp.text();
 
-  // Extract title
   const titleMatch = html.match(/<meta\s+name="title"\s+content="([^"]*)"/) ||
     html.match(/<meta\s+property="og:title"\s+content="([^"]*)"/) ||
     html.match(/<title>([^<]*)<\/title>/);
   const title = titleMatch?.[1] || "";
 
-  // Extract description
   const descMatch = html.match(/<meta\s+name="description"\s+content="([^"]*)"/) ||
-    html.match(/<meta\s+property="og:description"\s+content="([^"]*)"/) ;
+    html.match(/<meta\s+property="og:description"\s+content="([^"]*)">/);
   const description = descMatch?.[1] || "";
 
-  // Try to extract captions/transcript from the page's initial data
+  // Extract captions/subtitles
   let transcript = "";
   try {
-    // YouTube embeds caption track URLs in the page source
     const captionMatch = html.match(/"captions":\s*(\{.*?"playerCaptionsTracklistRenderer".*?\})\s*,\s*"/s);
     if (captionMatch) {
       const captionsJson = JSON.parse(captionMatch[1]);
       const tracks = captionsJson?.playerCaptionsTracklistRenderer?.captionTracks;
       if (tracks && tracks.length > 0) {
-        // Prefer Russian, then any
         const ruTrack = tracks.find((t: any) => t.languageCode === "ru") || tracks[0];
         if (ruTrack?.baseUrl) {
           const captionResp = await fetch(ruTrack.baseUrl);
           const captionXml = await captionResp.text();
-          // Extract text from XML captions
           transcript = captionXml
             .replace(/<[^>]+>/g, " ")
-            .replace(/&amp;/g, "&")
-            .replace(/&lt;/g, "<")
-            .replace(/&gt;/g, ">")
-            .replace(/&quot;/g, '"')
-            .replace(/&#39;/g, "'")
-            .replace(/\s+/g, " ")
-            .trim();
+            .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+            .replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+            .replace(/\s+/g, " ").trim();
         }
       }
     }
@@ -70,22 +64,24 @@ async function fetchYouTubeContent(videoId: string): Promise<string> {
     console.log("Could not extract captions:", e);
   }
 
-  // Also try to get structured data from ytInitialData
+  // Extract expanded description
   let expandedDescription = "";
   try {
     const initDataMatch = html.match(/var\s+ytInitialData\s*=\s*(\{.+?\});\s*<\/script>/s);
     if (initDataMatch) {
-      // Extract description from engagement panels or video details
       const descFromData = initDataMatch[1].match(/"attributedDescription":\s*\{"content":\s*"([^"]{20,})"/);
       if (descFromData) {
         expandedDescription = descFromData[1]
-          .replace(/\\n/g, "\n")
-          .replace(/\\"/g, '"')
-          .replace(/\\\\/g, "\\");
+          .replace(/\\n/g, "\n").replace(/\\"/g, '"').replace(/\\\\/g, "\\");
       }
     }
   } catch (e) {
     console.log("Could not extract ytInitialData:", e);
+  }
+
+  // STRICT: require at least transcript or substantial description
+  if (!transcript && expandedDescription.length < 100 && description.length < 100) {
+    throw new Error("NO_CONTENT");
   }
 
   const parts = [`Название видео: ${title}`];
@@ -93,11 +89,9 @@ async function fetchYouTubeContent(videoId: string): Promise<string> {
   if (expandedDescription && expandedDescription.length > description.length) {
     parts.push(`Полное описание: ${expandedDescription}`);
   }
-  if (transcript) parts.push(`Субтитры видео:\n${transcript.slice(0, 12000)}`);
+  if (transcript) parts.push(`Субтитры видео:\n${transcript.slice(0, 15000)}`);
 
-  const result = parts.join("\n\n");
-  console.log("YouTube content extracted, length:", result.length);
-  return result;
+  return parts.join("\n\n");
 }
 
 async function fetchPageContent(url: string): Promise<string> {
@@ -115,7 +109,7 @@ async function fetchPageContent(url: string): Promise<string> {
 
   const html = await pageResponse.text();
 
-  // Try to extract JSON-LD recipe schema first (many recipe sites use this)
+  // Try JSON-LD Recipe schema first
   const jsonLdMatch = html.match(/<script\s+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi);
   if (jsonLdMatch) {
     for (const match of jsonLdMatch) {
@@ -125,42 +119,39 @@ async function fetchPageContent(url: string): Promise<string> {
         const recipes = Array.isArray(parsed) ? parsed : [parsed];
         for (const item of recipes) {
           if (item["@type"] === "Recipe" || item["@type"]?.includes?.("Recipe")) {
-            console.log("Found JSON-LD Recipe schema!");
             return `JSON-LD рецепт:\n${JSON.stringify(item, null, 2).slice(0, 15000)}`;
           }
-          // Check @graph
           if (item["@graph"]) {
             for (const g of item["@graph"]) {
               if (g["@type"] === "Recipe" || g["@type"]?.includes?.("Recipe")) {
-                console.log("Found JSON-LD Recipe in @graph!");
                 return `JSON-LD рецепт:\n${JSON.stringify(g, null, 2).slice(0, 15000)}`;
               }
             }
           }
         }
-      } catch {
-        // not valid JSON, skip
-      }
+      } catch { /* skip invalid JSON */ }
     }
   }
 
-  // Fallback: extract text content
+  // Fallback: extract clean text
   const pageContent = html
     .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
     .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
     .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, "")
     .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, "")
     .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, "")
+    .replace(/<aside[^>]*>[\s\S]*?<\/aside>/gi, "")
+    .replace(/<!--[\s\S]*?-->/g, "")
     .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/\s+/g, " ")
-    .trim()
+    .replace(/&nbsp;/g, " ").replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    .replace(/\s+/g, " ").trim()
     .slice(0, 15000);
+
+  if (pageContent.length < 100) {
+    throw new Error("NO_CONTENT");
+  }
 
   return pageContent;
 }
@@ -190,46 +181,57 @@ serve(async (req) => {
       if (videoId) {
         console.log("Detected YouTube video:", videoId);
         pageContent = await fetchYouTubeContent(videoId);
+      } else if (extractTikTokUrl(url)) {
+        // TikTok pages are JS-rendered, we can't reliably scrape them
+        throw new Error("NO_CONTENT");
       } else {
         pageContent = await fetchPageContent(url);
       }
-    } catch (fetchError) {
+    } catch (fetchError: any) {
+      if (fetchError?.message === "NO_CONTENT") {
+        return new Response(
+          JSON.stringify({ error: "Не удалось получить данные из источника. Нет субтитров, описания или текста на странице." }),
+          { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       console.error("Error fetching URL:", fetchError);
-      throw new Error("Не удалось загрузить страницу. Проверьте ссылку и попробуйте снова.");
-    }
-
-    if (pageContent.length < 50) {
-      throw new Error("Не удалось извлечь содержимое страницы. Возможно, сайт блокирует доступ.");
+      return new Response(
+        JSON.stringify({ error: "Не удалось загрузить страницу. Проверьте ссылку и попробуйте снова." }),
+        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     console.log("Sending to AI, content length:", pageContent.length);
 
-    const systemPrompt = `Ты — профессиональный парсер кулинарных рецептов. Из предоставленного текста (веб-страницы, описания видео или субтитров) извлеки рецепт и верни ТОЛЬКО валидный JSON.
+    const systemPrompt = `Ты — строгий парсер кулинарных рецептов. Извлеки рецепт из текста и верни ТОЛЬКО валидный JSON.
 
-ПРАВИЛА:
-- Убери разговорную речь, рекламу, личные истории
-- Оставь только рецепт
-- Выдели ингредиенты с точными количествами
-- Если количества не указаны — предположи разумные бытовые меры
-- Определи время приготовления, порции, категорию
-- Не копируй текст дословно, переформулируй структурированно
+КРИТИЧЕСКИ ВАЖНЫЕ ПРАВИЛА:
+- ИЗВЛЕКАЙ ТОЛЬКО ТО, ЧТО РЕАЛЬНО ЕСТЬ В ТЕКСТЕ
+- ЗАПРЕЩЕНО придумывать ингредиенты, шаги или данные
+- Если в тексте нет конкретных ингредиентов — верни пустой массив
+- Если шаги не описаны — верни пустой массив
+- Если данных недостаточно для рецепта — верни JSON с полем "error": "Недостаточно данных для извлечения рецепта"
+- Удали разговорную речь, рекламу, личные истории
 - Пиши на языке оригинала рецепта
-- difficulty ДОЛЖЕН быть одним из: "easy", "medium", "hard"
-- Если текст содержит субтитры видео — извлеки рецепт из устной речи
+- difficulty ДОЛЖЕН быть: "easy", "medium" или "hard"
 
 Верни JSON:
 {
-  "title": "название",
-  "description": "краткое описание блюда",
-  "ingredients": ["ингредиент 1 с количеством", "ингредиент 2"],
-  "instructions": ["шаг 1", "шаг 2"],
-  "cooking_time": "время (например: 30 минут)",
-  "servings": число_порций,
+  "title": "название из текста",
+  "description": "краткое описание (если есть в тексте)",
+  "ingredients": ["точно как в тексте с количествами"],
+  "instructions": ["шаги из текста"],
+  "cooking_time": "время (если указано)",
+  "servings": число_порций_или_null,
   "difficulty": "easy|medium|hard",
-  "tags": ["тег1", "тег2"],
-  "notes": "полезные советы",
-  "category_hint": "подсказка категории (суп, салат, десерт, выпечка, и т.д.)"
-}`;
+  "tags": ["теги если есть"],
+  "notes": "полезные советы из текста",
+  "category_hint": "категория",
+  "source": "${url}"
+}
+
+Если рецепт невозможно извлечь, верни:
+{"error": "Недостаточно данных для извлечения рецепта"}`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -241,7 +243,7 @@ serve(async (req) => {
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Извлеки рецепт из этого текста:\n\n${pageContent}` },
+          { role: "user", content: `Извлеки рецепт СТРОГО из этого текста (не придумывай ничего):\n\n${pageContent}` },
         ],
       }),
     });
@@ -270,10 +272,29 @@ serve(async (req) => {
     const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       console.error("No JSON found in response:", rawContent);
-      throw new Error("AI не смог распознать рецепт на этой странице");
+      return new Response(
+        JSON.stringify({ error: "Не удалось распознать рецепт на этой странице" }),
+        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const parsed = JSON.parse(jsonMatch[0]);
+
+    // If AI returned an error (insufficient data)
+    if (parsed.error) {
+      return new Response(
+        JSON.stringify({ error: parsed.error }),
+        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate: must have at least title and some ingredients or instructions
+    if (!parsed.title || (!parsed.ingredients?.length && !parsed.instructions?.length)) {
+      return new Response(
+        JSON.stringify({ error: "Не удалось извлечь достаточно данных для рецепта из этого источника" }),
+        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Normalize difficulty
     const difficultyMap: Record<string, string> = {
@@ -284,6 +305,9 @@ serve(async (req) => {
     if (parsed.difficulty) {
       parsed.difficulty = difficultyMap[parsed.difficulty.toLowerCase()] || "medium";
     }
+
+    // Add source URL
+    parsed.source = url;
 
     return new Response(JSON.stringify(parsed), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
