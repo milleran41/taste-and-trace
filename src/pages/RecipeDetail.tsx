@@ -1,5 +1,5 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Clock, Users, Heart, Edit, Trash2, ChefHat } from "lucide-react";
+import { ArrowLeft, Clock, Users, Heart, Edit, Trash2, ChefHat, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -244,6 +244,34 @@ export default function RecipeDetail() {
                 </CardContent>
               </Card>
             )}
+
+            {(() => {
+              const source = recipe.source as any;
+              if (!source?.sourceUrl) return null;
+              const platformLabel =
+                source.sourcePlatform === "youtube" ? "YouTube" :
+                source.sourcePlatform === "tiktok" ? "TikTok" :
+                source.sourcePlatform === "instagram" ? "Instagram" :
+                (() => { try { return new URL(source.sourceUrl).hostname; } catch { return "Источник"; } })();
+              return (
+                <Card>
+                  <CardContent className="py-4">
+                    <div className="flex items-center gap-2 text-sm">
+                      <ExternalLink className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="text-muted-foreground">Источник:</span>
+                      <a
+                        href={source.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary underline hover:text-primary/80 truncate"
+                      >
+                        {platformLabel}
+                      </a>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })()}
           </div>
 
           <div className="lg:col-span-1">
