@@ -76,6 +76,7 @@ export function useCreateRecipe() {
           tags: recipe.tags,
           image: recipe.image,
           screenshots: (recipe as any).screenshots || [],
+          source: (recipe as any).source || null,
         })
         .select()
         .single();

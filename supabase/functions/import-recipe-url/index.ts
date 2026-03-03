@@ -17,6 +17,18 @@ function extractYouTubeVideoId(url: string): string | null {
   return null;
 }
 
+function detectPlatform(url: string): string {
+  if (/youtube\.com|youtu\.be/i.test(url)) return "youtube";
+  if (/tiktok\.com/i.test(url)) return "tiktok";
+  if (/instagram\.com/i.test(url)) return "instagram";
+  if (/vk\.com|vk\.video/i.test(url)) return "vk";
+  return "website";
+}
+
+function getYouTubeThumbnail(videoId: string): string {
+  return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+}
+
 function extractTikTokUrl(url: string): boolean {
   return /tiktok\.com/i.test(url);
 }
@@ -306,8 +318,33 @@ serve(async (req) => {
       parsed.difficulty = difficultyMap[parsed.difficulty.toLowerCase()] || "medium";
     }
 
-    // Add source URL
-    parsed.source = url;
+    // Build source metadata
+    const platform = detectPlatform(url);
+    const videoId = extractYouTubeVideoId(url);
+    parsed.source = {
+      sourceType: videoId || /tiktok\.com/i.test(url) ? "video" : "article",
+      sourceUrl: url,
+      sourcePlatform: platform,
+    };
+
+    // Add thumbnail for YouTube
+    if (videoId) {
+      parsed.thumbnail = getYouTubeThumbnail(videoId);
+    }
+
+    // Try to extract og:image for non-YouTube sources
+    if (!parsed.thumbnail && !videoId) {
+      try {
+        const pageResp = await fetch(url, {
+          headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" },
+        });
+        const html = await pageResp.text();
+        const ogMatch = html.match(/<meta\s+property="og:image"\s+content="([^"]*)"/i);
+        if (ogMatch?.[1]) {
+          parsed.thumbnail = ogMatch[1];
+        }
+      } catch { /* ignore */ }
+    }
 
     return new Response(JSON.stringify(parsed), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

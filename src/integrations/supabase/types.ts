@@ -51,6 +51,7 @@ export type Database = {
           notes: string | null
           screenshots: Json | null
           servings: number | null
+          source: Json | null
           tags: Json | null
           title: string
           updated_at: string | null
@@ -70,6 +71,7 @@ export type Database = {
           notes?: string | null
           screenshots?: Json | null
           servings?: number | null
+          source?: Json | null
           tags?: Json | null
           title: string
           updated_at?: string | null
@@ -89,6 +91,7 @@ export type Database = {
           notes?: string | null
           screenshots?: Json | null
           servings?: number | null
+          source?: Json | null
           tags?: Json | null
           title?: string
           updated_at?: string | null

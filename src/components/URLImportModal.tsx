@@ -25,6 +25,12 @@ interface ParsedRecipe {
   tags: string[];
   notes: string;
   category_hint: string;
+  source?: {
+    sourceType: string;
+    sourceUrl: string;
+    sourcePlatform: string;
+  };
+  thumbnail?: string;
 }
 
 interface URLImportModalProps {
@@ -144,6 +150,9 @@ export function URLImportModal({ open, onClose }: URLImportModalProps) {
     }
 
     try {
+      const sourceData = editMode ? parsed?.source : parsed?.source;
+      const thumbnailUrl = parsed?.thumbnail || "";
+
       await createRecipe.mutateAsync({
         title: data.title,
         description: data.description,
@@ -155,8 +164,9 @@ export function URLImportModal({ open, onClose }: URLImportModalProps) {
         tags: data.tags.split(",").map((t) => t.trim()).filter(Boolean),
         notes: data.notes,
         category: data.category,
-        image: "",
-      });
+        image: thumbnailUrl,
+        source: sourceData || null,
+      } as any);
       onClose();
       navigate("/");
     } catch {
@@ -271,6 +281,11 @@ export function URLImportModal({ open, onClose }: URLImportModalProps) {
                     )}
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    {parsed.thumbnail && (
+                      <div className="aspect-video overflow-hidden rounded-lg">
+                        <img src={parsed.thumbnail} alt={parsed.title} className="w-full h-full object-cover" />
+                      </div>
+                    )}
                     <div className="flex flex-wrap gap-2">
                       {parsed.cooking_time && <Badge variant="outline">⏱ {parsed.cooking_time}</Badge>}
                       {parsed.servings && <Badge variant="outline">👥 {parsed.servings} порций</Badge>}
@@ -318,6 +333,23 @@ export function URLImportModal({ open, onClose }: URLImportModalProps) {
                     {parsed.notes && (
                       <p className="text-xs text-muted-foreground italic">{parsed.notes}</p>
                     )}
+
+                    {parsed.source?.sourceUrl && (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2 border-t">
+                        <Link2 className="h-3.5 w-3.5" />
+                        <span>Источник:</span>
+                        <a
+                          href={parsed.source.sourceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary underline truncate max-w-[300px]"
+                        >
+                          {parsed.source.sourcePlatform === "youtube" ? "YouTube" :
+                           parsed.source.sourcePlatform === "tiktok" ? "TikTok" :
+                           new URL(parsed.source.sourceUrl).hostname}
+                        </a>
+                      </div>
+                    )
                   </CardContent>
                 </Card>
               ) : (
