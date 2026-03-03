@@ -349,7 +349,7 @@ export function URLImportModal({ open, onClose }: URLImportModalProps) {
                            new URL(parsed.source.sourceUrl).hostname}
                         </a>
                       </div>
-                    )
+                    )}
                   </CardContent>
                 </Card>
               ) : (
