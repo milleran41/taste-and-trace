@@ -300,13 +300,17 @@ serve(async (req) => {
       );
     }
 
-    // Validate: must have at least title and some ingredients or instructions
-    if (!parsed.title || (!parsed.ingredients?.length && !parsed.instructions?.length)) {
+    // Validate: must have at least a title
+    if (!parsed.title) {
       return new Response(
         JSON.stringify({ error: "Не удалось извлечь достаточно данных для рецепта из этого источника" }),
         { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Ensure arrays exist even if empty
+    if (!parsed.ingredients) parsed.ingredients = [];
+    if (!parsed.instructions) parsed.instructions = [];
 
     // Normalize difficulty
     const difficultyMap: Record<string, string> = {
