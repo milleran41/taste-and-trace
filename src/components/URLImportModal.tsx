@@ -87,11 +87,12 @@ export function URLImportModal({ open, onClose }: URLImportModalProps) {
     setErrorMsg("");
     setParsed(null);
 
-    try {
-      // Simulate stages for UX
-      setTimeout(() => setStage("analyzing"), 1500);
-      setTimeout(() => setStage("formatting"), 4000);
+    // Track timeouts so we can cancel them when fetch completes
+    let completed = false;
+    const t1 = setTimeout(() => { if (!completed) setStage("analyzing"); }, 1500);
+    const t2 = setTimeout(() => { if (!completed) setStage("formatting"); }, 4000);
 
+    try {
       const resp = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/import-recipe-url`,
         {
@@ -103,6 +104,10 @@ export function URLImportModal({ open, onClose }: URLImportModalProps) {
           body: JSON.stringify({ url: url.trim() }),
         }
       );
+
+      completed = true;
+      clearTimeout(t1);
+      clearTimeout(t2);
 
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({}));
@@ -125,6 +130,9 @@ export function URLImportModal({ open, onClose }: URLImportModalProps) {
       });
       setStage("done");
     } catch (e) {
+      completed = true;
+      clearTimeout(t1);
+      clearTimeout(t2);
       setStage("error");
       setErrorMsg(e instanceof Error ? e.message : "Неизвестная ошибка");
     }
