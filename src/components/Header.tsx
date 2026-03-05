@@ -13,7 +13,7 @@ export function Header() {
         <div className="container flex h-16 items-center justify-between">
           <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <ChefHat className="h-8 w-8 text-primary" />
-            <span className="font-display text-xl font-semibold">Taste & Trace</span>
+            <span className="font-display text-xl font-semibold">YumBook</span>
           </Link>
           
           <nav className="flex items-center gap-2">
