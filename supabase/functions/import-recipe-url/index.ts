@@ -37,8 +37,9 @@ async function fetchYouTubeContent(videoId: string): Promise<string> {
   const pageUrl = `https://www.youtube.com/watch?v=${videoId}`;
   const resp = await fetch(pageUrl, {
     headers: {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
       "Accept-Language": "ru-RU,ru;q=0.9,en;q=0.8",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     },
   });
   const html = await resp.text();
@@ -52,47 +53,99 @@ async function fetchYouTubeContent(videoId: string): Promise<string> {
     html.match(/<meta\s+property="og:description"\s+content="([^"]*)">/);
   const description = descMatch?.[1] || "";
 
-  // Extract captions/subtitles
+  // Extract captions/subtitles - try multiple patterns
   let transcript = "";
   try {
-    const captionMatch = html.match(/"captions":\s*(\{.*?"playerCaptionsTracklistRenderer".*?\})\s*,\s*"/s);
-    if (captionMatch) {
-      const captionsJson = JSON.parse(captionMatch[1]);
-      const tracks = captionsJson?.playerCaptionsTracklistRenderer?.captionTracks;
-      if (tracks && tracks.length > 0) {
-        const ruTrack = tracks.find((t: any) => t.languageCode === "ru") || tracks[0];
-        if (ruTrack?.baseUrl) {
-          const captionResp = await fetch(ruTrack.baseUrl);
-          const captionXml = await captionResp.text();
-          transcript = captionXml
-            .replace(/<[^>]+>/g, " ")
-            .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-            .replace(/&quot;/g, '"').replace(/&#39;/g, "'")
-            .replace(/\s+/g, " ").trim();
-        }
+    const captionPatterns = [
+      /"captions":\s*(\{.*?"playerCaptionsTracklistRenderer".*?\})\s*,\s*"/s,
+      /"playerCaptionsTracklistRenderer":\s*(\{.*?"captionTracks".*?\})/s,
+    ];
+    
+    let tracks: any[] | null = null;
+    for (const pattern of captionPatterns) {
+      const captionMatch = html.match(pattern);
+      if (captionMatch) {
+        try {
+          const captionsJson = JSON.parse(captionMatch[1]);
+          tracks = captionsJson?.playerCaptionsTracklistRenderer?.captionTracks || captionsJson?.captionTracks;
+          if (tracks) break;
+        } catch { /* try next pattern */ }
+      }
+    }
+    
+    if (tracks && tracks.length > 0) {
+      const ruTrack = tracks.find((t: any) => t.languageCode === "ru") || 
+                      tracks.find((t: any) => t.languageCode?.startsWith("ru")) || 
+                      tracks[0];
+      if (ruTrack?.baseUrl) {
+        const captionResp = await fetch(ruTrack.baseUrl);
+        const captionXml = await captionResp.text();
+        transcript = captionXml
+          .replace(/<[^>]+>/g, " ")
+          .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+          .replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+          .replace(/\s+/g, " ").trim();
       }
     }
   } catch (e) {
     console.log("Could not extract captions:", e);
   }
 
-  // Extract expanded description
+  // Extract expanded description from ytInitialData - try multiple patterns
   let expandedDescription = "";
   try {
-    const initDataMatch = html.match(/var\s+ytInitialData\s*=\s*(\{.+?\});\s*<\/script>/s);
-    if (initDataMatch) {
-      const descFromData = initDataMatch[1].match(/"attributedDescription":\s*\{"content":\s*"([^"]{20,})"/);
-      if (descFromData) {
-        expandedDescription = descFromData[1]
-          .replace(/\\n/g, "\n").replace(/\\"/g, '"').replace(/\\\\/g, "\\");
+    const dataPatterns = [
+      /var\s+ytInitialData\s*=\s*(\{.+?\});\s*<\/script>/s,
+      /ytInitialData\s*=\s*'(\{.+?\})'\s*;/s,
+      /window\["ytInitialData"\]\s*=\s*(\{.+?\})\s*;/s,
+    ];
+    
+    for (const pattern of dataPatterns) {
+      const initDataMatch = html.match(pattern);
+      if (initDataMatch) {
+        // Try multiple description extraction patterns
+        const descPatterns = [
+          /"attributedDescription":\s*\{"content":\s*"([^"]{20,})"/,
+          /"description":\s*\{"simpleText":\s*"([^"]{20,})"/,
+          /"shortDescription":\s*"([^"]{20,})"/,
+        ];
+        for (const dp of descPatterns) {
+          const descFromData = initDataMatch[1].match(dp);
+          if (descFromData) {
+            expandedDescription = descFromData[1]
+              .replace(/\\n/g, "\n").replace(/\\"/g, '"').replace(/\\\\/g, "\\");
+            break;
+          }
+        }
+        if (expandedDescription) break;
       }
     }
   } catch (e) {
-    console.log("Could not extract ytInitialData:", e);
+    console.log("Could not extract ytInitialData description:", e);
   }
 
-  // STRICT: require at least transcript or substantial description
-  if (!transcript && expandedDescription.length < 100 && description.length < 100) {
+  // Also try ytInitialPlayerResponse for description
+  if (!expandedDescription) {
+    try {
+      const playerMatch = html.match(/var\s+ytInitialPlayerResponse\s*=\s*(\{.+?\});\s*(?:var|<\/script>)/s) ||
+        html.match(/ytInitialPlayerResponse\s*=\s*(\{.+?\})\s*;/s);
+      if (playerMatch) {
+        const shortDescMatch = playerMatch[1].match(/"shortDescription":\s*"((?:[^"\\]|\\.)*)"/s);
+        if (shortDescMatch && shortDescMatch[1].length > 50) {
+          expandedDescription = shortDescMatch[1]
+            .replace(/\\n/g, "\n").replace(/\\"/g, '"').replace(/\\\\/g, "\\");
+        }
+      }
+    } catch (e) {
+      console.log("Could not extract playerResponse:", e);
+    }
+  }
+
+  console.log("YouTube extraction - title:", title.length, "desc:", description.length, 
+    "expanded:", expandedDescription.length, "transcript:", transcript.length);
+
+  // Be more lenient - allow if we have at least a description with some content
+  if (!transcript && expandedDescription.length < 50 && description.length < 50) {
     throw new Error("NO_CONTENT");
   }
 
