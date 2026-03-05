@@ -240,7 +240,23 @@ export default function RecipeDetail() {
                   <CardTitle>Заметки</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="whitespace-pre-wrap">{recipe.notes}</p>
+                  <p className="whitespace-pre-wrap">
+                    {recipe.notes.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
+                      /^https?:\/\//.test(part) ? (
+                        <a
+                          key={i}
+                          href={part}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary underline hover:text-primary/80 break-all"
+                        >
+                          {part}
+                        </a>
+                      ) : (
+                        <span key={i}>{part}</span>
+                      )
+                    )}
+                  </p>
                 </CardContent>
               </Card>
             )}
