@@ -159,10 +159,15 @@ export function URLImportModal({ open, onClose }: URLImportModalProps) {
 
     try {
       const sourceData = parsed?.source;
-      // For video sources, save the original video URL; for articles, save the thumbnail
-      const imageUrl = sourceData?.sourceType === "video"
-        ? sourceData.sourceUrl
-        : (parsed?.thumbnail || "");
+
+      // Append source URL to notes if available
+      let finalNotes = data.notes || "";
+      if (sourceData?.sourceUrl) {
+        const urlLine = `\nИсточник: ${sourceData.sourceUrl}`;
+        if (!finalNotes.includes(sourceData.sourceUrl)) {
+          finalNotes = finalNotes ? finalNotes.trimEnd() + "\n" + urlLine : urlLine.trim();
+        }
+      }
 
       await createRecipe.mutateAsync({
         title: data.title,
@@ -173,9 +178,9 @@ export function URLImportModal({ open, onClose }: URLImportModalProps) {
         servings: data.servings,
         difficulty: data.difficulty,
         tags: data.tags.split(",").map((t) => t.trim()).filter(Boolean),
-        notes: data.notes,
+        notes: finalNotes,
         category: data.category,
-        image: imageUrl,
+        image: parsed?.thumbnail || "",
         source: sourceData || null,
       } as any);
       onClose();
