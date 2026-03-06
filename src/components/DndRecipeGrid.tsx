@@ -41,7 +41,7 @@ export function DndRecipeGrid({ recipes, isLoading, selectedCategory }: DndRecip
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
         {Array.from({ length: 8 }).map((_, i) => (
           <div key={i} className="space-y-3">
             <Skeleton className="aspect-[4/3] rounded-lg" />
@@ -136,7 +136,7 @@ export function DndRecipeGrid({ recipes, isLoading, selectedCategory }: DndRecip
       )}
 
       <SortableContext items={recipes.map((r) => r.id)} strategy={rectSortingStrategy}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
           {recipes.map((recipe) => (
             <SortableRecipeCard key={recipe.id} recipe={recipe} />
           ))}
