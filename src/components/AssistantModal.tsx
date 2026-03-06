@@ -14,9 +14,9 @@ const QUICK_ACTIONS = [
   { icon: "🔄", label: "Чем заменить ингредиент?" },
   { icon: "🔥", label: "Нет духовки — что делать?" },
   { icon: "❄️", label: "Можно ли заморозить?" },
-  { icon: "🕒", label: "Сколько хранится?" },
+  { icon: "🔥", label: "Пересчитать калории" },
   { icon: "🥗", label: "Сделать блюдо полезнее" },
-  { icon: "⚖️", label: "Пересчитать порции" },
+  { icon: "❓", label: "Спросить помощника" },
 ];
 
 interface AssistantModalProps {
