@@ -1,5 +1,5 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Clock, Users, Heart, Edit, Trash2, ChefHat, ExternalLink } from "lucide-react";
+import { ArrowLeft, Clock, Users, Heart, Edit, Trash2, ChefHat, ExternalLink, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
