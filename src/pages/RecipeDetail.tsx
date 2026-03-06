@@ -138,6 +138,14 @@ export default function RecipeDetail() {
             <Button
               variant="ghost"
               size="icon"
+              onClick={handlePrint}
+              title="Распечатать"
+            >
+              <Printer className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={handleToggleFavorite}
               className={cn(recipe.is_favorite && "text-destructive")}
             >
