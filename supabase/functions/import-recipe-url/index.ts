@@ -242,12 +242,19 @@ serve(async (req) => {
     let pageContent = "";
 
     try {
+      // Reject YouTube non-video URLs (search, channel, playlist pages)
+      if (/youtube\.com\/(results|channel|c\/|user\/|playlist|feed|@)/i.test(url)) {
+        return new Response(
+          JSON.stringify({ error: "Пожалуйста, вставьте ссылку на конкретное видео, а не на страницу поиска или канала YouTube." }),
+          { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       const videoId = extractYouTubeVideoId(url);
       if (videoId) {
         console.log("Detected YouTube video:", videoId);
         pageContent = await fetchYouTubeContent(videoId);
       } else if (extractTikTokUrl(url)) {
-        // TikTok pages are JS-rendered, we can't reliably scrape them
         throw new Error("NO_CONTENT");
       } else {
         pageContent = await fetchPageContent(url);
