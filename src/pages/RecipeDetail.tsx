@@ -1,5 +1,5 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Clock, Users, Heart, Edit, Trash2, ChefHat, ExternalLink } from "lucide-react";
+import { ArrowLeft, Clock, Users, Heart, Edit, Trash2, ChefHat, ExternalLink, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,6 +44,36 @@ export default function RecipeDetail() {
   const handleToggleFavorite = () => {
     if (!recipe) return;
     toggleFavorite.mutate({ id: recipe.id, isFavorite: !recipe.is_favorite });
+  };
+
+  const handlePrint = () => {
+    if (!recipe) return;
+    const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
+    const instructions = Array.isArray(recipe.instructions) ? recipe.instructions : [];
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    printWindow.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${recipe.title} — YumBook</title>
+      <style>
+        body { font-family: system-ui, sans-serif; max-width: 700px; margin: 0 auto; padding: 2rem; color: #1a1a1a; }
+        h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+        .meta { color: #666; margin-bottom: 1.5rem; font-size: 0.95rem; }
+        h2 { font-size: 1.2rem; border-bottom: 1px solid #ddd; padding-bottom: 0.3rem; margin-top: 1.5rem; }
+        ul, ol { padding-left: 1.25rem; }
+        li { margin-bottom: 0.4rem; }
+        .notes { white-space: pre-wrap; margin-top: 1rem; }
+        @media print { body { padding: 0; } }
+      </style></head><body>
+      <h1>${recipe.title}</h1>
+      <div class="meta">
+        ${recipe.cooking_time ? '⏱ ' + recipe.cooking_time + '  ' : ''}${recipe.servings ? '👥 ' + recipe.servings + ' порций' : ''}
+      </div>
+      ${recipe.description ? '<p>' + recipe.description + '</p>' : ''}
+      ${ingredients.length > 0 ? '<h2>Ингредиенты</h2><ul>' + ingredients.map(i => '<li>' + String(i) + '</li>').join('') + '</ul>' : ''}
+      ${instructions.length > 0 ? '<h2>Приготовление</h2><ol>' + instructions.map(s => '<li>' + String(s) + '</li>').join('') + '</ol>' : ''}
+      ${recipe.notes ? '<h2>Заметки</h2><div class="notes">' + recipe.notes + '</div>' : ''}
+      </body></html>`);
+    printWindow.document.close();
+    printWindow.print();
   };
 
   if (isLoading) {
@@ -104,6 +134,14 @@ export default function RecipeDetail() {
               title="Меры"
             >
               <Scale className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handlePrint}
+              title="Распечатать"
+            >
+              <Printer className="h-5 w-5" />
             </Button>
             <Button
               variant="ghost"
