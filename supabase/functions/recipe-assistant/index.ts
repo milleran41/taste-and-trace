@@ -15,6 +15,26 @@ function isSubstitutionQuery(message: string): boolean {
   return patterns.some((p) => p.test(message));
 }
 
+// Detect if user is asking about the app itself (help/navigation)
+function isAppHelpQuery(message: string): boolean {
+  const patterns = [
+    /спросить помощника/i, /как пользоваться/i, /для чего/i, /как работать/i,
+    /что делает кнопка/i, /как добавить рецепт/i, /как удалить/i, /как редактировать/i,
+    /функци/i, /возможност/i, /навигац/i, /справк/i, /помощь по программе/i,
+    /что умеет/i, /как работает программа/i, /инструкция/i,
+  ];
+  return patterns.some((p) => p.test(message));
+}
+
+// Detect calorie calculation request
+function isCalorieQuery(message: string): boolean {
+  const patterns = [
+    /калори/i, /ккал/i, /энергетическ/i, /пищевая ценность/i, /бжу/i,
+    /пересчитать калории/i, /calorie/i,
+  ];
+  return patterns.some((p) => p.test(message));
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
