@@ -198,6 +198,18 @@ export function AssistantModal({ open, onClose, recipe }: AssistantModalProps) {
             </div>
           )}
 
+          {messages.length > 0 && !isLoading && (
+            <div className="flex justify-center">
+              <button
+                onClick={() => { setMessages([]); setInput(""); }}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-full border bg-muted/50 hover:bg-muted"
+              >
+                <RotateCcw className="h-3 w-3" />
+                Новый вопрос
+              </button>
+            </div>
+          )}
+
           {messages.map((msg, i) => (
             <div
               key={i}
