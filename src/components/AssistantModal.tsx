@@ -178,10 +178,15 @@ export function AssistantModal({ open, onClose, recipe }: AssistantModalProps) {
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <div className="flex items-center gap-2">
+            {messages.length > 0 && (
+              <Button variant="ghost" size="icon" onClick={handleReset} title="На главную">
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            )}
             <Bot className="h-5 w-5 text-primary" />
             <h2 className="font-display text-lg font-bold">Помощник</h2>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose}>
+          <Button variant="ghost" size="icon" onClick={handleClose}>
             <X className="h-4 w-4" />
           </Button>
         </div>
