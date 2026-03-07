@@ -171,7 +171,7 @@ export function AssistantModal({ open, onClose, recipe }: AssistantModalProps) {
       ref={overlayRef}
       className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in"
       onClick={(e) => {
-        if (e.target === overlayRef.current) onClose();
+        if (e.target === overlayRef.current) handleClose();
       }}
     >
       <div className="relative w-full max-w-lg mx-4 rounded-xl border bg-card text-card-foreground shadow-xl animate-scale-in flex flex-col max-h-[85vh]">
