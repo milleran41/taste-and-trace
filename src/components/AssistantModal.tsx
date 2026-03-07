@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { X, Bot, Send, Loader2 } from "lucide-react";
+import { X, Bot, Send, Loader2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -12,11 +12,10 @@ interface Message {
 
 const QUICK_ACTIONS = [
   { icon: "🔄", label: "Чем заменить ингредиент?" },
-  { icon: "🔥", label: "Нет духовки — что делать?" },
-  { icon: "❄️", label: "Можно ли заморозить?" },
   { icon: "🔥", label: "Пересчитать калории" },
   { icon: "🥗", label: "Сделать блюдо полезнее" },
-  { icon: "❓", label: "Спросить помощника" },
+  { icon: "🧊", label: "Рецепт из холодильника" },
+  { icon: "🍽️", label: "Что приготовить на..." },
 ];
 
 interface AssistantModalProps {
