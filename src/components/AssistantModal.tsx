@@ -28,6 +28,17 @@ export function AssistantModal({ open, onClose, recipe }: AssistantModalProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleClose = () => {
+    setMessages([]);
+    setInput("");
+    onClose();
+  };
+
+  const handleReset = () => {
+    setMessages([]);
+    setInput("");
+  };
   const overlayRef = useRef<HTMLDivElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
