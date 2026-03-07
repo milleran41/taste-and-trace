@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { X, Bot, Send, Loader2, RotateCcw } from "lucide-react";
+import { X, Bot, Send, Loader2, RotateCcw, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -28,13 +28,24 @@ export function AssistantModal({ open, onClose, recipe }: AssistantModalProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleClose = () => {
+    setMessages([]);
+    setInput("");
+    onClose();
+  };
+
+  const handleReset = () => {
+    setMessages([]);
+    setInput("");
+  };
   const overlayRef = useRef<HTMLDivElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") handleClose();
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -160,17 +171,22 @@ export function AssistantModal({ open, onClose, recipe }: AssistantModalProps) {
       ref={overlayRef}
       className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in"
       onClick={(e) => {
-        if (e.target === overlayRef.current) onClose();
+        if (e.target === overlayRef.current) handleClose();
       }}
     >
       <div className="relative w-full max-w-lg mx-4 rounded-xl border bg-card text-card-foreground shadow-xl animate-scale-in flex flex-col max-h-[85vh]">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <div className="flex items-center gap-2">
+            {messages.length > 0 && (
+              <Button variant="ghost" size="icon" onClick={handleReset} title="На главную">
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            )}
             <Bot className="h-5 w-5 text-primary" />
             <h2 className="font-display text-lg font-bold">Помощник</h2>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose}>
+          <Button variant="ghost" size="icon" onClick={handleClose}>
             <X className="h-4 w-4" />
           </Button>
         </div>
@@ -201,7 +217,7 @@ export function AssistantModal({ open, onClose, recipe }: AssistantModalProps) {
           {messages.length > 0 && !isLoading && (
             <div className="flex justify-center">
               <button
-                onClick={() => { setMessages([]); setInput(""); }}
+                onClick={handleReset}
                 className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-full border bg-muted/50 hover:bg-muted"
               >
                 <RotateCcw className="h-3 w-3" />
