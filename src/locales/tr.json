@@ -138,5 +138,9 @@
   "guide_how_edit_recipe": "Tarif nasıl düzenlenir?",
   "guide_how_measures": "Ölçüler düğmesi nasıl çalışır?",
   "guide_how_assistant": "Yapay zeka asistanı nasıl kullanılır?",
-  "guide_how_save_recipe": "Tarif nasıl kaydedilir?"
+  "guide_how_save_recipe": "Tarif nasıl kaydedilir?",
+  "support_author": "Yazarı destekle",
+  "support_author_message": "Bu uygulamayı beğendiyseniz, yazarı destekleyebilirsiniz. Desteğiniz geliştirmemize ve yeni özellikler eklememize yardımcı olur!",
+  "support_coming_soon": "Ödeme yöntemleri yakında: PayPal, Stripe, kripto ve daha fazlası.",
+  "ad_placeholder": "Reklam alanı"
 }

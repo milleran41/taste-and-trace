@@ -138,5 +138,9 @@
   "guide_how_edit_recipe": "Comment modifier une recette ?",
   "guide_how_measures": "Comment fonctionne le bouton Mesures ?",
   "guide_how_assistant": "Comment utiliser l'assistant IA ?",
-  "guide_how_save_recipe": "Comment sauvegarder une recette ?"
+  "guide_how_save_recipe": "Comment sauvegarder une recette ?",
+  "support_author": "Soutenir l'auteur",
+  "support_author_message": "Si vous aimez cette application, vous pouvez soutenir l'auteur. Votre soutien nous aide à améliorer et ajouter de nouvelles fonctionnalités !",
+  "support_coming_soon": "Moyens de paiement bientôt : PayPal, Stripe, crypto et plus.",
+  "ad_placeholder": "Espace publicitaire"
 }

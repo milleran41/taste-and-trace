@@ -138,5 +138,9 @@
   "guide_how_edit_recipe": "Як редагувати рецепт?",
   "guide_how_measures": "Як працює кнопка «Міри»?",
   "guide_how_assistant": "Як використовувати AI-помічника?",
-  "guide_how_save_recipe": "Як зберегти рецепт?"
+  "guide_how_save_recipe": "Як зберегти рецепт?",
+  "support_author": "Підтримати автора",
+  "support_author_message": "Якщо вам подобається цей додаток, ви можете підтримати автора. Ваша підтримка допомагає нам покращувати та додавати нові функції!",
+  "support_coming_soon": "Способи оплати незабаром: PayPal, Stripe, криптовалюта та інші.",
+  "ad_placeholder": "Рекламне місце"
 }

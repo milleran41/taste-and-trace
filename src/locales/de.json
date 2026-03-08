@@ -138,5 +138,9 @@
   "guide_how_edit_recipe": "Wie bearbeite ich ein Rezept?",
   "guide_how_measures": "Wie funktioniert die Maße-Schaltfläche?",
   "guide_how_assistant": "Wie verwende ich den KI-Assistenten?",
-  "guide_how_save_recipe": "Wie speichere ich ein Rezept?"
+  "guide_how_save_recipe": "Wie speichere ich ein Rezept?",
+  "support_author": "Autor unterstützen",
+  "support_author_message": "Wenn Ihnen diese App gefällt, können Sie den Autor unterstützen. Ihre Unterstützung hilft uns, die App zu verbessern und neue Funktionen hinzuzufügen!",
+  "support_coming_soon": "Zahlungsmethoden demnächst: PayPal, Stripe, Krypto und mehr.",
+  "ad_placeholder": "Werbefläche"
 }
