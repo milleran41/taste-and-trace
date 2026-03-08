@@ -11,11 +11,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCreateRecipe } from "@/hooks/useRecipes";
 import { useCategories } from "@/hooks/useCategories";
 import { RecipeParserDialog } from "@/components/RecipeParserDialog";
+import { useTranslation } from "react-i18next";
 
 export default function AddRecipe() {
   const navigate = useNavigate();
   const createRecipe = useCreateRecipe();
   const { data: categories } = useCategories();
+  const { t } = useTranslation();
 
   const [formData, setFormData] = useState({
     title: "",
@@ -31,21 +33,12 @@ export default function AddRecipe() {
     image: "",
   });
 
-  // Screenshots pending to be saved with the recipe
   const [pendingScreenshots, setPendingScreenshots] = useState<string[]>([]);
 
   const handleParsed = (data: {
-    title: string;
-    description: string;
-    ingredients: string;
-    instructions: string;
-    cooking_time: string;
-    servings: number;
-    difficulty: string;
-    tags: string;
-    notes: string;
-    image?: string;
-    screenshotToAdd?: string;
+    title: string; description: string; ingredients: string; instructions: string;
+    cooking_time: string; servings: number; difficulty: string; tags: string; notes: string;
+    image?: string; screenshotToAdd?: string;
   }) => {
     setFormData((prev) => ({
       ...prev,
@@ -60,7 +53,6 @@ export default function AddRecipe() {
       notes: data.notes || prev.notes,
       image: data.image || prev.image,
     }));
-
     if (data.screenshotToAdd) {
       setPendingScreenshots((prev) => [...prev, data.screenshotToAdd!]);
     }
@@ -69,7 +61,7 @@ export default function AddRecipe() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.category) {
-      toast.error("Пожалуйста, выберите категорию");
+      toast.error(t("please_select_category"));
       return;
     }
     await createRecipe.mutateAsync({
@@ -86,56 +78,52 @@ export default function AddRecipe() {
     <div className="min-h-screen bg-background">
       <div className="container py-8 max-w-2xl">
         <Button variant="ghost" asChild className="mb-6">
-          <Link to="/"><ArrowLeft className="h-4 w-4 mr-2" />Назад</Link>
+          <Link to="/"><ArrowLeft className="h-4 w-4 mr-2" />{t("back")}</Link>
         </Button>
         <div className="flex items-center justify-between mb-6">
-          <h1 className="font-display text-3xl font-bold">Новый рецепт</h1>
+          <h1 className="font-display text-3xl font-bold">{t("new_recipe")}</h1>
           <RecipeParserDialog onParsed={handleParsed} />
         </div>
         <form onSubmit={handleSubmit} className="space-y-6">
           <Card>
-            <CardHeader><CardTitle>Основная информация</CardTitle></CardHeader>
+            <CardHeader><CardTitle>{t("basic_info")}</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <div><Label htmlFor="title">Название *</Label><Input id="title" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} required /></div>
-              <div><Label htmlFor="description">Описание</Label><Textarea id="description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} /></div>
-              <div><Label htmlFor="image">URL изображения</Label><Input id="image" value={formData.image} onChange={(e) => setFormData({ ...formData, image: e.target.value })} /></div>
+              <div><Label htmlFor="title">{t("title")} *</Label><Input id="title" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} required /></div>
+              <div><Label htmlFor="description">{t("description")}</Label><Textarea id="description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} /></div>
+              <div><Label htmlFor="image">{t("image_url")}</Label><Input id="image" value={formData.image} onChange={(e) => setFormData({ ...formData, image: e.target.value })} /></div>
               {pendingScreenshots.length > 0 && (
                 <div>
-                  <Label>Скриншоты из фото ({pendingScreenshots.length})</Label>
+                  <Label>{t("screenshots_from_photo")} ({pendingScreenshots.length})</Label>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {pendingScreenshots.map((src, i) => (
                       <div key={i} className="relative">
-                        <img src={src} alt={`Screenshot ${i + 1}`} className="h-20 w-20 object-cover rounded border" />
-                        <button
-                          type="button"
-                          className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full w-4 h-4 flex items-center justify-center text-xs"
-                          onClick={() => setPendingScreenshots((prev) => prev.filter((_, idx) => idx !== i))}
-                        >×</button>
+                        <img src={src} alt={`${t("screenshot")} ${i + 1}`} className="h-20 w-20 object-cover rounded border" />
+                        <button type="button" className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full w-4 h-4 flex items-center justify-center text-xs" onClick={() => setPendingScreenshots((prev) => prev.filter((_, idx) => idx !== i))}>×</button>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
               <div className="grid grid-cols-2 gap-4">
-                <div><Label>Категория *</Label><Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v })}><SelectTrigger><SelectValue placeholder="Выберите" /></SelectTrigger><SelectContent>{categories?.map((c) => (<SelectItem key={c.id} value={c.id}>{c.label}</SelectItem>))}</SelectContent></Select></div>
-                <div><Label>Сложность</Label><Select value={formData.difficulty} onValueChange={(v) => setFormData({ ...formData, difficulty: v })}><SelectTrigger><SelectValue placeholder="Выберите" /></SelectTrigger><SelectContent><SelectItem value="easy">Легко</SelectItem><SelectItem value="medium">Средне</SelectItem><SelectItem value="hard">Сложно</SelectItem></SelectContent></Select></div>
+                <div><Label>{t("category")} *</Label><Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v })}><SelectTrigger><SelectValue placeholder={t("select")} /></SelectTrigger><SelectContent>{categories?.map((c) => (<SelectItem key={c.id} value={c.id}>{c.label}</SelectItem>))}</SelectContent></Select></div>
+                <div><Label>{t("difficulty")}</Label><Select value={formData.difficulty} onValueChange={(v) => setFormData({ ...formData, difficulty: v })}><SelectTrigger><SelectValue placeholder={t("select")} /></SelectTrigger><SelectContent><SelectItem value="easy">{t("easy")}</SelectItem><SelectItem value="medium">{t("medium")}</SelectItem><SelectItem value="hard">{t("hard")}</SelectItem></SelectContent></Select></div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><Label htmlFor="time">Время</Label><Input id="time" placeholder="30 минут" value={formData.cooking_time} onChange={(e) => setFormData({ ...formData, cooking_time: e.target.value })} /></div>
-                <div><Label htmlFor="servings">Порции</Label><Input id="servings" type="number" value={formData.servings} onChange={(e) => setFormData({ ...formData, servings: parseInt(e.target.value) || 1 })} /></div>
+                <div><Label htmlFor="time">{t("time")}</Label><Input id="time" placeholder="30 min" value={formData.cooking_time} onChange={(e) => setFormData({ ...formData, cooking_time: e.target.value })} /></div>
+                <div><Label htmlFor="servings">{t("servings")}</Label><Input id="servings" type="number" value={formData.servings} onChange={(e) => setFormData({ ...formData, servings: parseInt(e.target.value) || 1 })} /></div>
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardHeader><CardTitle>Ингредиенты и инструкции</CardTitle></CardHeader>
+            <CardHeader><CardTitle>{t("ingredients")} & {t("instructions")}</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <div><Label>Ингредиенты (каждый с новой строки)</Label><Textarea value={formData.ingredients} onChange={(e) => setFormData({ ...formData, ingredients: e.target.value })} rows={6} /></div>
-              <div><Label>Инструкции (каждый шаг с новой строки)</Label><Textarea value={formData.instructions} onChange={(e) => setFormData({ ...formData, instructions: e.target.value })} rows={8} /></div>
-              <div><Label>Заметки</Label><Textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} /></div>
-              <div><Label>Теги (через запятую)</Label><Input value={formData.tags} onChange={(e) => setFormData({ ...formData, tags: e.target.value })} placeholder="завтрак, быстро, здоровое" /></div>
+              <div><Label>{t("ingredients_per_line")}</Label><Textarea value={formData.ingredients} onChange={(e) => setFormData({ ...formData, ingredients: e.target.value })} rows={6} /></div>
+              <div><Label>{t("instructions_per_line")}</Label><Textarea value={formData.instructions} onChange={(e) => setFormData({ ...formData, instructions: e.target.value })} rows={8} /></div>
+              <div><Label>{t("notes")}</Label><Textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} /></div>
+              <div><Label>{t("tags")}</Label><Input value={formData.tags} onChange={(e) => setFormData({ ...formData, tags: e.target.value })} placeholder={t("tags_comma")} /></div>
             </CardContent>
           </Card>
-          <Button type="submit" className="w-full" disabled={createRecipe.isPending}>{createRecipe.isPending ? "Сохранение..." : "Сохранить рецепт"}</Button>
+          <Button type="submit" className="w-full" disabled={createRecipe.isPending}>{createRecipe.isPending ? t("saving") : t("save_recipe")}</Button>
         </form>
       </div>
     </div>

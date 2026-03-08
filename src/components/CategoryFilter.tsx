@@ -3,6 +3,7 @@ import { useCategories } from "@/hooks/useCategories";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CategoryManager } from "@/components/CategoryManager";
+import { useTranslation } from "react-i18next";
 
 interface CategoryFilterProps {
   selectedCategory: string;
@@ -11,6 +12,7 @@ interface CategoryFilterProps {
 
 export function CategoryFilter({ selectedCategory, onCategoryChange }: CategoryFilterProps) {
   const { data: categories, isLoading } = useCategories();
+  const { t } = useTranslation();
 
   if (isLoading) {
     return (
@@ -31,7 +33,7 @@ export function CategoryFilter({ selectedCategory, onCategoryChange }: CategoryF
         className="rounded-full whitespace-nowrap"
         onClick={() => onCategoryChange("all")}
       >
-        Все рецепты
+        {t("all_recipes")}
       </Button>
       {categories?.map((category) => (
         <Button

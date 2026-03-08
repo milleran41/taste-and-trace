@@ -4,19 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Recipe } from "@/types/recipe";
+import { useTranslation } from "react-i18next";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
 }
-
-const QUICK_ACTIONS = [
-  { icon: "🔄", label: "Чем заменить ингредиент?" },
-  { icon: "🔥", label: "Пересчитать калории" },
-  { icon: "🥗", label: "Сделать блюдо полезнее" },
-  { icon: "🧊", label: "Рецепт из холодильника" },
-  { icon: "🍽️", label: "Что приготовить на..." },
-];
 
 interface AssistantModalProps {
   open: boolean;
@@ -28,6 +21,15 @@ export function AssistantModal({ open, onClose, recipe }: AssistantModalProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const { t } = useTranslation();
+
+  const QUICK_ACTIONS = [
+    { icon: "🔄", labelKey: "replace_ingredient" },
+    { icon: "🔥", labelKey: "calculate_calories" },
+    { icon: "🥗", labelKey: "make_healthier" },
+    { icon: "🧊", labelKey: "fridge_recipe" },
+    { icon: "🍽️", labelKey: "what_to_cook" },
+  ];
 
   const handleClose = () => {
     setMessages([]);
@@ -98,7 +100,7 @@ export function AssistantModal({ open, onClose, recipe }: AssistantModalProps) {
 
         if (!resp.ok || !resp.body) {
           const err = await resp.json().catch(() => ({}));
-          throw new Error(err.error || "Ошибка сервера");
+          throw new Error(err.error || t("error"));
         }
 
         const reader = resp.body.getReader();
@@ -146,8 +148,7 @@ export function AssistantModal({ open, onClose, recipe }: AssistantModalProps) {
           }
         }
       } catch (e) {
-        const errorMsg =
-          e instanceof Error ? e.message : "Произошла ошибка";
+        const errorMsg = e instanceof Error ? e.message : t("error");
         setMessages((prev) => [
           ...prev,
           { role: "assistant", content: `❌ ${errorMsg}` },
@@ -156,7 +157,7 @@ export function AssistantModal({ open, onClose, recipe }: AssistantModalProps) {
         setIsLoading(false);
       }
     },
-    [isLoading, messages, recipe]
+    [isLoading, messages, recipe, t]
   );
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -179,12 +180,12 @@ export function AssistantModal({ open, onClose, recipe }: AssistantModalProps) {
         <div className="flex items-center justify-between p-4 border-b">
           <div className="flex items-center gap-2">
             {messages.length > 0 && (
-              <Button variant="ghost" size="icon" onClick={handleReset} title="На главную">
+              <Button variant="ghost" size="icon" onClick={handleReset} title={t("go_to_main")}>
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             )}
             <Bot className="h-5 w-5 text-primary" />
-            <h2 className="font-display text-lg font-bold">Помощник</h2>
+            <h2 className="font-display text-lg font-bold">{t("assistant")}</h2>
           </div>
           <Button variant="ghost" size="icon" onClick={handleClose}>
             <X className="h-4 w-4" />
@@ -196,18 +197,18 @@ export function AssistantModal({ open, onClose, recipe }: AssistantModalProps) {
           {messages.length === 0 && (
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground text-center mb-4">
-                Задайте вопрос по рецепту «{recipe.title}»
+                {t("ask_about_recipe", { title: recipe.title })}
               </p>
               <div className="grid grid-cols-2 gap-2">
                 {QUICK_ACTIONS.map((action) => (
                   <button
-                    key={action.label}
-                    onClick={() => sendMessage(action.label)}
+                    key={action.labelKey}
+                    onClick={() => sendMessage(t(action.labelKey))}
                     disabled={isLoading}
                     className="text-left text-sm p-2.5 rounded-lg border bg-muted/50 hover:bg-muted transition-colors disabled:opacity-50"
                   >
                     <span className="mr-1.5">{action.icon}</span>
-                    {action.label}
+                    {t(action.labelKey)}
                   </button>
                 ))}
               </div>
@@ -221,7 +222,7 @@ export function AssistantModal({ open, onClose, recipe }: AssistantModalProps) {
                 className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-full border bg-muted/50 hover:bg-muted"
               >
                 <RotateCcw className="h-3 w-3" />
-                Новый вопрос
+                {t("new_question")}
               </button>
             </div>
           )}
@@ -243,7 +244,7 @@ export function AssistantModal({ open, onClose, recipe }: AssistantModalProps) {
           {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
             <div className="flex items-center gap-2 text-muted-foreground text-sm">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Думаю...
+              {t("thinking")}
             </div>
           )}
 
@@ -255,7 +256,7 @@ export function AssistantModal({ open, onClose, recipe }: AssistantModalProps) {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Задайте вопрос по рецепту…"
+            placeholder={t("ask_recipe_question")}
             disabled={isLoading}
             className="flex-1"
           />
