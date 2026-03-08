@@ -1,0 +1,49 @@
+{
+  "name": "taste-and-trace-desktop",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^26.0.0",
+    "electron-builder": "^24.6.0"
+  },
+  "build": {
+    "appId": "com.hyrican.tasteandtrace",
+    "productName": "Taste & Trace",
+    "directories": {
+      "output": "../dist_electron"
+    },
+    "files": [
+      "main.js",
+      "../dist/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../public/icons",
+        "to": "icons"
+      }
+    ],
+    "win": {
+      "icon": "../public/icons/icon-512.png",
+      "target": "nsis"
+    },
+    "mac": {
+      "icon": "../public/icons/icon-512.png",
+      "target": "dmg"
+    },
+    "linux": {
+      "icon": "../public/icons/icon-512.png",
+      "target": ["AppImage", "deb"]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}
