@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.import-recipe-url]
 verify_jwt = false
+
+[functions.app-guide]
+verify_jwt = false

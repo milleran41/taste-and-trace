@@ -46,6 +46,7 @@ export function Header() {
         </div>
       </header>
       <URLImportModal open={importOpen} onClose={() => setImportOpen(false)} />
+      <GuideModal open={guideOpen} onClose={() => setGuideOpen(false)} />
     </>
   );
 }

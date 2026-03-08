@@ -279,6 +279,7 @@ export default function RecipeDetail() {
       {recipe && (
         <AssistantModal open={assistantOpen} onClose={() => setAssistantOpen(false)} recipe={recipe} />
       )}
+      <GuideModal open={guideOpen} onClose={() => setGuideOpen(false)} />
     </div>
   );
 }
