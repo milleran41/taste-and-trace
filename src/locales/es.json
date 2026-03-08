@@ -128,5 +128,15 @@
   "quote_subtext": "Cocinar es un acto de amor.",
   "quote_author": "Alain Chapel",
   "quote_role": "chef",
-  "language": "Idioma"
+  "language": "Idioma",
+  "guide": "Guía",
+  "guide_description": "Haz cualquier pregunta sobre la aplicación — cómo funcionan los botones, cómo añadir recetas y más.",
+  "guide_ask_placeholder": "Haz una pregunta sobre la app…",
+  "guide_how_add_recipe": "¿Cómo añadir una receta?",
+  "guide_how_import_video": "¿Cómo importar una receta de un vídeo?",
+  "guide_how_recognize_screenshot": "¿Cómo reconocer una receta de una captura?",
+  "guide_how_edit_recipe": "¿Cómo editar una receta?",
+  "guide_how_measures": "¿Cómo funciona el botón de Medidas?",
+  "guide_how_assistant": "¿Cómo usar el asistente de IA?",
+  "guide_how_save_recipe": "¿Cómo guardar una receta?"
 }

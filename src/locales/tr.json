@@ -128,5 +128,15 @@
   "quote_subtext": "Yemek pişirmek bir sevgi eylemidir.",
   "quote_author": "Alain Chapel",
   "quote_role": "şef",
-  "language": "Dil"
+  "language": "Dil",
+  "guide": "Rehber",
+  "guide_description": "Uygulama hakkında herhangi bir soru sorun — düğmeler nasıl çalışır, tarif nasıl eklenir ve daha fazlası.",
+  "guide_ask_placeholder": "Uygulama hakkında soru sorun…",
+  "guide_how_add_recipe": "Tarif nasıl eklenir?",
+  "guide_how_import_video": "Videodan tarif nasıl içe aktarılır?",
+  "guide_how_recognize_screenshot": "Ekran görüntüsünden tarif nasıl tanınır?",
+  "guide_how_edit_recipe": "Tarif nasıl düzenlenir?",
+  "guide_how_measures": "Ölçüler düğmesi nasıl çalışır?",
+  "guide_how_assistant": "Yapay zeka asistanı nasıl kullanılır?",
+  "guide_how_save_recipe": "Tarif nasıl kaydedilir?"
 }

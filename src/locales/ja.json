@@ -128,5 +128,15 @@
   "quote_subtext": "料理は愛の行為です。",
   "quote_author": "アラン・シャペル",
   "quote_role": "シェフ",
-  "language": "言語"
+  "language": "言語",
+  "guide": "ガイド",
+  "guide_description": "アプリについて何でも質問してください — ボタンの使い方、レシピの追加方法など。",
+  "guide_ask_placeholder": "アプリについて質問する…",
+  "guide_how_add_recipe": "レシピの追加方法は？",
+  "guide_how_import_video": "動画からレシピをインポートするには？",
+  "guide_how_recognize_screenshot": "スクリーンショットからレシピを認識するには？",
+  "guide_how_edit_recipe": "レシピの編集方法は？",
+  "guide_how_measures": "計量ボタンの使い方は？",
+  "guide_how_assistant": "AIアシスタントの使い方は？",
+  "guide_how_save_recipe": "レシピの保存方法は？"
 }

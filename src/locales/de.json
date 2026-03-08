@@ -128,5 +128,15 @@
   "quote_subtext": "Kochen ist ein Akt der Liebe.",
   "quote_author": "Alain Chapel",
   "quote_role": "Chefkoch",
-  "language": "Sprache"
+  "language": "Sprache",
+  "guide": "Wegweiser",
+  "guide_description": "Stellen Sie eine Frage zur App — wie Schaltflächen funktionieren, wie man Rezepte hinzufügt und mehr.",
+  "guide_ask_placeholder": "Frage zur App stellen…",
+  "guide_how_add_recipe": "Wie füge ich ein Rezept hinzu?",
+  "guide_how_import_video": "Wie importiere ich ein Rezept aus einem Video?",
+  "guide_how_recognize_screenshot": "Wie erkenne ich ein Rezept aus einem Screenshot?",
+  "guide_how_edit_recipe": "Wie bearbeite ich ein Rezept?",
+  "guide_how_measures": "Wie funktioniert die Maße-Schaltfläche?",
+  "guide_how_assistant": "Wie verwende ich den KI-Assistenten?",
+  "guide_how_save_recipe": "Wie speichere ich ein Rezept?"
 }
