@@ -13,7 +13,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import { MeasuresModal } from "@/components/MeasuresModal";
 import { AssistantModal } from "@/components/AssistantModal";
-import { Scale, Bot } from "lucide-react";
+import { GuideModal } from "@/components/GuideModal";
+import { Scale, Bot, HelpCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 export default function RecipeDetail() {
