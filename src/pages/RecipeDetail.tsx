@@ -117,6 +117,9 @@ export default function RecipeDetail() {
             </Link>
           </Button>
           <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={() => setGuideOpen(true)} title={t("guide")}>
+              <HelpCircle className="h-5 w-5" />
+            </Button>
             <Button variant="ghost" size="icon" onClick={() => setAssistantOpen((v) => !v)} title={t("assistant")}>
               <Bot className="h-5 w-5" />
             </Button>
