@@ -13,7 +13,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import { MeasuresModal } from "@/components/MeasuresModal";
 import { AssistantModal } from "@/components/AssistantModal";
-import { Scale, Bot } from "lucide-react";
+import { GuideModal } from "@/components/GuideModal";
+import { Scale, Bot, HelpCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 export default function RecipeDetail() {
@@ -22,6 +23,7 @@ export default function RecipeDetail() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [measuresOpen, setMeasuresOpen] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const { t } = useTranslation();
 
   const { data: recipe, isLoading } = useRecipe(id!);
@@ -115,6 +117,9 @@ export default function RecipeDetail() {
             </Link>
           </Button>
           <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={() => setGuideOpen(true)} title={t("guide")}>
+              <HelpCircle className="h-5 w-5" />
+            </Button>
             <Button variant="ghost" size="icon" onClick={() => setAssistantOpen((v) => !v)} title={t("assistant")}>
               <Bot className="h-5 w-5" />
             </Button>
@@ -274,6 +279,7 @@ export default function RecipeDetail() {
       {recipe && (
         <AssistantModal open={assistantOpen} onClose={() => setAssistantOpen(false)} recipe={recipe} />
       )}
+      <GuideModal open={guideOpen} onClose={() => setGuideOpen(false)} />
     </div>
   );
 }

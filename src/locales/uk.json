@@ -128,5 +128,15 @@
   "quote_subtext": "Приготування їжі – це акт любові.",
   "quote_author": "Ален Шапель",
   "quote_role": "шеф-кухар",
-  "language": "Мова"
+  "language": "Мова",
+  "guide": "Путівник",
+  "guide_description": "Задайте будь-яке питання про додаток — як працюють кнопки, як додавати рецепти та інше.",
+  "guide_ask_placeholder": "Задайте питання про програму…",
+  "guide_how_add_recipe": "Як додати рецепт?",
+  "guide_how_import_video": "Як імпортувати рецепт з відео?",
+  "guide_how_recognize_screenshot": "Як розпізнати рецепт зі скріншота?",
+  "guide_how_edit_recipe": "Як редагувати рецепт?",
+  "guide_how_measures": "Як працює кнопка «Міри»?",
+  "guide_how_assistant": "Як використовувати AI-помічника?",
+  "guide_how_save_recipe": "Як зберегти рецепт?"
 }

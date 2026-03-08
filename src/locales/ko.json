@@ -128,5 +128,15 @@
   "quote_subtext": "요리는 사랑의 행위입니다.",
   "quote_author": "알랭 샤펠",
   "quote_role": "셰프",
-  "language": "언어"
+  "language": "언어",
+  "guide": "가이드",
+  "guide_description": "앱에 대해 무엇이든 물어보세요 — 버튼 사용법, 레시피 추가 방법 등.",
+  "guide_ask_placeholder": "앱에 대해 질문하세요…",
+  "guide_how_add_recipe": "레시피를 추가하는 방법은?",
+  "guide_how_import_video": "동영상에서 레시피를 가져오는 방법은?",
+  "guide_how_recognize_screenshot": "스크린샷에서 레시피를 인식하는 방법은?",
+  "guide_how_edit_recipe": "레시피를 편집하는 방법은?",
+  "guide_how_measures": "계량 버튼은 어떻게 사용하나요?",
+  "guide_how_assistant": "AI 어시스턴트는 어떻게 사용하나요?",
+  "guide_how_save_recipe": "레시피를 저장하는 방법은?"
 }

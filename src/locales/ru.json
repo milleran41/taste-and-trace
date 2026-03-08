@@ -128,5 +128,15 @@
   "quote_subtext": "Приготовление еды – это акт любви.",
   "quote_author": "Ален Шапель",
   "quote_role": "шеф-повар",
-  "language": "Язык"
+  "language": "Язык",
+  "guide": "Путеводитель",
+  "guide_description": "Задайте любой вопрос о приложении — как работают кнопки, как добавлять рецепты и многое другое.",
+  "guide_ask_placeholder": "Задайте вопрос о программе…",
+  "guide_how_add_recipe": "Как добавить рецепт?",
+  "guide_how_import_video": "Как вставить рецепт из видео?",
+  "guide_how_recognize_screenshot": "Как распознать рецепт со скриншота?",
+  "guide_how_edit_recipe": "Как редактировать рецепт?",
+  "guide_how_measures": "Как работает кнопка «Меры»?",
+  "guide_how_assistant": "Как использовать AI-помощника?",
+  "guide_how_save_recipe": "Как сохранить рецепт?"
 }

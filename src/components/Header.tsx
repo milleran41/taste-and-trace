@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ChefHat, Plus, Heart, Link2 } from "lucide-react";
+import { ChefHat, Plus, Heart, Link2, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { URLImportModal } from "@/components/URLImportModal";
+import { GuideModal } from "@/components/GuideModal";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { useTranslation } from "react-i18next";
 
 export function Header() {
   const [importOpen, setImportOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const { t } = useTranslation();
 
   return (
@@ -36,11 +38,15 @@ export function Header() {
                 <span className="hidden sm:inline">{t("add_recipe")}</span>
               </Link>
             </Button>
+            <Button variant="ghost" size="icon" onClick={() => setGuideOpen(true)} title={t("guide")}>
+              <HelpCircle className="h-5 w-5" />
+            </Button>
             <LanguageSelector />
           </nav>
         </div>
       </header>
       <URLImportModal open={importOpen} onClose={() => setImportOpen(false)} />
+      <GuideModal open={guideOpen} onClose={() => setGuideOpen(false)} />
     </>
   );
 }

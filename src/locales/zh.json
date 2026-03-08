@@ -128,5 +128,15 @@
   "quote_subtext": "烹饪是一种爱的行为。",
   "quote_author": "阿兰·夏佩尔",
   "quote_role": "主厨",
-  "language": "语言"
+  "language": "语言",
+  "guide": "指南",
+  "guide_description": "询问关于应用的任何问题——按钮如何使用、如何添加食谱等。",
+  "guide_ask_placeholder": "询问关于应用的问题…",
+  "guide_how_add_recipe": "如何添加食谱？",
+  "guide_how_import_video": "如何从视频导入食谱？",
+  "guide_how_recognize_screenshot": "如何从截图识别食谱？",
+  "guide_how_edit_recipe": "如何编辑食谱？",
+  "guide_how_measures": "度量按钮如何使用？",
+  "guide_how_assistant": "如何使用AI助手？",
+  "guide_how_save_recipe": "如何保存食谱？"
 }

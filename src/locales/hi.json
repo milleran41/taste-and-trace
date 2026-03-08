@@ -128,5 +128,15 @@
   "quote_subtext": "खाना बनाना प्यार का कार्य है।",
   "quote_author": "एलेन शापेल",
   "quote_role": "शेफ",
-  "language": "भाषा"
+  "language": "भाषा",
+  "guide": "गाइड",
+  "guide_description": "ऐप के बारे में कोई भी सवाल पूछें — बटन कैसे काम करते हैं, रेसिपी कैसे जोड़ें और बहुत कुछ।",
+  "guide_ask_placeholder": "ऐप के बारे में सवाल पूछें…",
+  "guide_how_add_recipe": "रेसिपी कैसे जोड़ें?",
+  "guide_how_import_video": "वीडियो से रेसिपी कैसे आयात करें?",
+  "guide_how_recognize_screenshot": "स्क्रीनशॉट से रेसिपी कैसे पहचानें?",
+  "guide_how_edit_recipe": "रेसिपी कैसे संपादित करें?",
+  "guide_how_measures": "माप बटन कैसे काम करता है?",
+  "guide_how_assistant": "AI सहायक का उपयोग कैसे करें?",
+  "guide_how_save_recipe": "रेसिपी कैसे सहेजें?"
 }
