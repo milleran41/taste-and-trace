@@ -10,12 +10,13 @@ import { useRecipe, useDeleteRecipe, useToggleFavorite } from "@/hooks/useRecipe
 import { useCategories } from "@/hooks/useCategories";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState } from "react";
-import { MeasuresModal } from "@/components/MeasuresModal";
-import { AssistantModal } from "@/components/AssistantModal";
-import { GuideModal } from "@/components/GuideModal";
+import { useState, lazy, Suspense } from "react";
 import { Scale, Bot, HelpCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
+
+const MeasuresModal = lazy(() => import("@/components/MeasuresModal").then(m => ({ default: m.MeasuresModal })));
+const AssistantModal = lazy(() => import("@/components/AssistantModal").then(m => ({ default: m.AssistantModal })));
+const GuideModal = lazy(() => import("@/components/GuideModal").then(m => ({ default: m.GuideModal })));
 
 export default function RecipeDetail() {
   const { id } = useParams<{ id: string }>();
@@ -275,11 +276,11 @@ export default function RecipeDetail() {
           </div>
         </div>
       </div>
-      <MeasuresModal open={measuresOpen} onClose={() => setMeasuresOpen(false)} />
-      {recipe && (
-        <AssistantModal open={assistantOpen} onClose={() => setAssistantOpen(false)} recipe={recipe} />
-      )}
-      <GuideModal open={guideOpen} onClose={() => setGuideOpen(false)} />
+      <Suspense fallback={null}>
+        {measuresOpen && <MeasuresModal open={measuresOpen} onClose={() => setMeasuresOpen(false)} />}
+        {recipe && assistantOpen && <AssistantModal open={assistantOpen} onClose={() => setAssistantOpen(false)} recipe={recipe} />}
+        {guideOpen && <GuideModal open={guideOpen} onClose={() => setGuideOpen(false)} />}
+      </Suspense>
     </div>
   );
 }
