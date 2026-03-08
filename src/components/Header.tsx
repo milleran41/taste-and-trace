@@ -1,16 +1,18 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ChefHat, Plus, Heart, Link2, HelpCircle } from "lucide-react";
+import { ChefHat, Plus, Heart, Link2, HelpCircle, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { URLImportModal } from "@/components/URLImportModal";
 import { GuideModal } from "@/components/GuideModal";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { useTranslation } from "react-i18next";
+import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 
 export function Header() {
   const [importOpen, setImportOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const { t } = useTranslation();
+  const { canInstall, promptInstall } = useInstallPrompt();
 
   return (
     <>
@@ -22,6 +24,12 @@ export function Header() {
           </Link>
           
           <nav className="flex items-center gap-2">
+            {canInstall && (
+              <Button variant="outline" size="sm" onClick={promptInstall} className="gap-2 text-primary border-primary/30 hover:bg-primary/10">
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">{t("install_app")}</span>
+              </Button>
+            )}
             <Button variant="ghost" size="icon" asChild>
               <Link to="/?favorites=true">
                 <Heart className="h-5 w-5" />
