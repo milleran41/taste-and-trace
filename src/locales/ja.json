@@ -138,5 +138,9 @@
   "guide_how_edit_recipe": "レシピの編集方法は？",
   "guide_how_measures": "計量ボタンの使い方は？",
   "guide_how_assistant": "AIアシスタントの使い方は？",
-  "guide_how_save_recipe": "レシピの保存方法は？"
+  "guide_how_save_recipe": "レシピの保存方法は？",
+  "support_author": "作者を支援する",
+  "support_author_message": "このアプリが気に入ったら、作者を支援できます。ご支援は改善と新機能の追加に役立ちます！",
+  "support_coming_soon": "決済方法は近日公開：PayPal、Stripe、暗号通貨など。",
+  "ad_placeholder": "広告スペース"
 }

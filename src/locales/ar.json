@@ -138,5 +138,9 @@
   "guide_how_edit_recipe": "كيف أعدّل وصفة؟",
   "guide_how_measures": "كيف يعمل زر المقاييس؟",
   "guide_how_assistant": "كيف أستخدم مساعد الذكاء الاصطناعي؟",
-  "guide_how_save_recipe": "كيف أحفظ وصفة؟"
+  "guide_how_save_recipe": "كيف أحفظ وصفة؟",
+  "support_author": "ادعم المؤلف",
+  "support_author_message": "إذا أعجبك هذا التطبيق، يمكنك دعم المؤلف. دعمك يساعدنا على التحسين وإضافة ميزات جديدة!",
+  "support_coming_soon": "طرق الدفع قريبًا: PayPal، Stripe، عملات رقمية والمزيد.",
+  "ad_placeholder": "مساحة إعلانية"
 }
