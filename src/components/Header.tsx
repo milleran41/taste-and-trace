@@ -38,6 +38,9 @@ export function Header() {
                 <span className="hidden sm:inline">{t("add_recipe")}</span>
               </Link>
             </Button>
+            <Button variant="ghost" size="icon" onClick={() => setGuideOpen(true)} title={t("guide")}>
+              <HelpCircle className="h-5 w-5" />
+            </Button>
             <LanguageSelector />
           </nav>
         </div>
