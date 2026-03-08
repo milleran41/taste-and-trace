@@ -103,7 +103,9 @@ export default function Index() {
         ) : (
           <RecipeGrid recipes={filteredRecipes} isLoading={isLoading} />
         )}
-      </main>
+        </main>
+        <RightSidebar />
+      </div>
     </div>
   );
 }
