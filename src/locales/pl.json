@@ -142,5 +142,7 @@
   "support_author": "Wesprzyj autora",
   "support_author_message": "Jeśli podoba Ci się ta aplikacja, możesz wesprzeć autora. Twoje wsparcie pomaga nam ulepszać i dodawać nowe funkcje!",
   "support_scan_qr": "Zeskanuj kod QR, aby wesprzeć autora.",
-  "ad_placeholder": "Miejsce reklamowe"
+  "ad_placeholder": "Miejsce reklamowe",
+  "install_app": "Zainstaluj",
+  "offline_message": "Brak połączenia — tryb offline"
 }

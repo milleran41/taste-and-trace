@@ -142,5 +142,7 @@
   "support_author": "ادعم المؤلف",
   "support_author_message": "إذا أعجبك هذا التطبيق، يمكنك دعم المؤلف. دعمك يساعدنا على التحسين وإضافة ميزات جديدة!",
   "support_scan_qr": "امسح رمز QR لدعم المؤلف.",
-  "ad_placeholder": "مساحة إعلانية"
+  "ad_placeholder": "مساحة إعلانية",
+  "install_app": "تثبيت",
+  "offline_message": "لا يوجد اتصال — وضع عدم الاتصال"
 }

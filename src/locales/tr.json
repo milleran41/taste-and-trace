@@ -142,5 +142,7 @@
   "support_author": "Yazarı destekle",
   "support_author_message": "Bu uygulamayı beğendiyseniz, yazarı destekleyebilirsiniz. Desteğiniz geliştirmemize ve yeni özellikler eklememize yardımcı olur!",
   "support_scan_qr": "Yazarı desteklemek için QR kodunu tarayın.",
-  "ad_placeholder": "Reklam alanı"
+  "ad_placeholder": "Reklam alanı",
+  "install_app": "Yükle",
+  "offline_message": "Bağlantı yok — çevrimdışı mod"
 }
