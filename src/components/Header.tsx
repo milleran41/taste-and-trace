@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next";
 
 export function Header() {
   const [importOpen, setImportOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const { t } = useTranslation();
 
   return (
