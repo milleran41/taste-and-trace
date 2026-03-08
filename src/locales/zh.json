@@ -138,5 +138,9 @@
   "guide_how_edit_recipe": "如何编辑食谱？",
   "guide_how_measures": "度量按钮如何使用？",
   "guide_how_assistant": "如何使用AI助手？",
-  "guide_how_save_recipe": "如何保存食谱？"
+  "guide_how_save_recipe": "如何保存食谱？",
+  "support_author": "支持作者",
+  "support_author_message": "如果您喜欢这个应用，可以支持作者。您的支持帮助我们改进和添加新功能！",
+  "support_coming_soon": "支付方式即将推出：PayPal、Stripe、加密货币等。",
+  "ad_placeholder": "广告位"
 }

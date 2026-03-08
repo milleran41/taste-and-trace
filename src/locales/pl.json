@@ -138,5 +138,9 @@
   "guide_how_edit_recipe": "Jak edytować przepis?",
   "guide_how_measures": "Jak działa przycisk Miary?",
   "guide_how_assistant": "Jak korzystać z asystenta AI?",
-  "guide_how_save_recipe": "Jak zapisać przepis?"
+  "guide_how_save_recipe": "Jak zapisać przepis?",
+  "support_author": "Wesprzyj autora",
+  "support_author_message": "Jeśli podoba Ci się ta aplikacja, możesz wesprzeć autora. Twoje wsparcie pomaga nam ulepszać i dodawać nowe funkcje!",
+  "support_coming_soon": "Metody płatności wkrótce: PayPal, Stripe, krypto i inne.",
+  "ad_placeholder": "Miejsce reklamowe"
 }

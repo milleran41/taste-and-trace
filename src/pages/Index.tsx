@@ -5,9 +5,9 @@ import { SearchBar } from "@/components/SearchBar";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { RecipeGrid } from "@/components/RecipeGrid";
 import { DndRecipeGrid } from "@/components/DndRecipeGrid";
+import { RightSidebar } from "@/components/RightSidebar";
 import { useRecipes, useFavoriteRecipes } from "@/hooks/useRecipes";
 import { useTranslation } from "react-i18next";
-
 export default function Index() {
   const [searchParams] = useSearchParams();
   const showFavorites = searchParams.get("favorites") === "true";
@@ -39,10 +39,11 @@ export default function Index() {
   }, [recipes, searchQuery]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header />
       
-      <main className="container py-8">
+      <div className="flex flex-1">
+        <main className="flex-1 min-w-0 px-4 md:px-6 lg:px-8 py-8">
         <section className="mb-10">
           {showFavorites ? (
             <>
@@ -103,7 +104,9 @@ export default function Index() {
         ) : (
           <RecipeGrid recipes={filteredRecipes} isLoading={isLoading} />
         )}
-      </main>
+        </main>
+        <RightSidebar />
+      </div>
     </div>
   );
 }
