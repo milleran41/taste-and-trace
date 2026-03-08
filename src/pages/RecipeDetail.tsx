@@ -23,6 +23,7 @@ export default function RecipeDetail() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [measuresOpen, setMeasuresOpen] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const { t } = useTranslation();
 
   const { data: recipe, isLoading } = useRecipe(id!);
