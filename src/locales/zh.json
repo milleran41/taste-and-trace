@@ -114,7 +114,7 @@
   "recipe_moved": "食谱已移至其他分类",
   "error_moving_recipe": "移动食谱时出错",
   "move_to": "移至：",
-  "ask_about_recipe": "关于食谱"{{title}}"的提问",
+  "ask_about_recipe": "关于食谱「{{title}}」的提问",
   "new_question": "新问题",
   "ask_recipe_question": "关于食谱提问…",
   "thinking": "思考中...",
