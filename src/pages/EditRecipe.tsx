@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,8 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRecipe, useUpdateRecipe } from "@/hooks/useRecipes";
 import { useCategories } from "@/hooks/useCategories";
-import { RecipeParserDialog } from "@/components/RecipeParserDialog";
 import { useTranslation } from "react-i18next";
+
+const RecipeParserDialog = lazy(() => import("@/components/RecipeParserDialog").then(m => ({ default: m.RecipeParserDialog })));
 
 export default function EditRecipe() {
   const { id } = useParams<{ id: string }>();
@@ -64,7 +65,9 @@ export default function EditRecipe() {
         <Button variant="ghost" asChild className="mb-6"><Link to={`/recipe/${id}`}><ArrowLeft className="h-4 w-4 mr-2" />{t("back")}</Link></Button>
         <div className="flex items-center justify-between mb-6">
           <h1 className="font-display text-3xl font-bold">{t("edit_recipe")}</h1>
-          <RecipeParserDialog onParsed={handleParsed} />
+          <Suspense fallback={null}>
+            <RecipeParserDialog onParsed={handleParsed} />
+          </Suspense>
         </div>
         <form onSubmit={handleSubmit} className="space-y-6">
           <Card><CardHeader><CardTitle>{t("basic_info")}</CardTitle></CardHeader><CardContent className="space-y-4">

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, lazy, Suspense } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
@@ -10,8 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCreateRecipe } from "@/hooks/useRecipes";
 import { useCategories } from "@/hooks/useCategories";
-import { RecipeParserDialog } from "@/components/RecipeParserDialog";
 import { useTranslation } from "react-i18next";
+
+const RecipeParserDialog = lazy(() => import("@/components/RecipeParserDialog").then(m => ({ default: m.RecipeParserDialog })));
 
 export default function AddRecipe() {
   const navigate = useNavigate();
@@ -82,7 +83,9 @@ export default function AddRecipe() {
         </Button>
         <div className="flex items-center justify-between mb-6">
           <h1 className="font-display text-3xl font-bold">{t("new_recipe")}</h1>
-          <RecipeParserDialog onParsed={handleParsed} />
+          <Suspense fallback={null}>
+            <RecipeParserDialog onParsed={handleParsed} />
+          </Suspense>
         </div>
         <form onSubmit={handleSubmit} className="space-y-6">
           <Card>

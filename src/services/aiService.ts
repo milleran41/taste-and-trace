@@ -22,23 +22,30 @@ export interface ParseRecipeImageParams {
 export async function parseRecipe(
   params: ParseRecipeTextParams | ParseRecipeImageParams
 ) {
-  const resp = await fetch(
-    `${EDGE_FUNCTIONS_URL}/${AI_ENDPOINTS.parseRecipe}`,
-    {
-      method: "POST",
-      headers: edgeFunctionHeaders(),
-      body: JSON.stringify(params),
+  try {
+    const resp = await fetch(
+      `${EDGE_FUNCTIONS_URL}/${AI_ENDPOINTS.parseRecipe}`,
+      {
+        method: "POST",
+        headers: edgeFunctionHeaders(),
+        body: JSON.stringify(params),
+      }
+    );
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error || `AI error: ${resp.status}`);
     }
-  );
 
-  if (!resp.ok) {
-    const err = await resp.json().catch(() => ({}));
-    throw new Error(err.error || `AI error: ${resp.status}`);
+    const data = await resp.json();
+    if (data?.error) throw new Error(data.error);
+    return data;
+  } catch (error) {
+    console.error("[aiService] parseRecipe failed:", error);
+    throw error instanceof Error
+      ? error
+      : new Error("AI service unavailable. Please try again later.");
   }
-
-  const data = await resp.json();
-  if (data?.error) throw new Error(data.error);
-  return data;
 }
 
 /* ------------------------------------------------------------------ */
@@ -52,21 +59,28 @@ export interface AssistantParams {
 }
 
 export async function fetchAssistantStream(params: AssistantParams) {
-  const resp = await fetch(
-    `${EDGE_FUNCTIONS_URL}/${AI_ENDPOINTS.recipeAssistant}`,
-    {
-      method: "POST",
-      headers: edgeFunctionHeaders(),
-      body: JSON.stringify(params),
+  try {
+    const resp = await fetch(
+      `${EDGE_FUNCTIONS_URL}/${AI_ENDPOINTS.recipeAssistant}`,
+      {
+        method: "POST",
+        headers: edgeFunctionHeaders(),
+        body: JSON.stringify(params),
+      }
+    );
+
+    if (!resp.ok || !resp.body) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error || `AI error: ${resp.status}`);
     }
-  );
 
-  if (!resp.ok || !resp.body) {
-    const err = await resp.json().catch(() => ({}));
-    throw new Error(err.error || `AI error: ${resp.status}`);
+    return resp.body;
+  } catch (error) {
+    console.error("[aiService] fetchAssistantStream failed:", error);
+    throw error instanceof Error
+      ? error
+      : new Error("AI service unavailable. Please try again later.");
   }
-
-  return resp.body;
 }
 
 /* ------------------------------------------------------------------ */
@@ -80,21 +94,28 @@ export interface GuideParams {
 }
 
 export async function fetchGuideStream(params: GuideParams) {
-  const resp = await fetch(
-    `${EDGE_FUNCTIONS_URL}/${AI_ENDPOINTS.appGuide}`,
-    {
-      method: "POST",
-      headers: edgeFunctionHeaders(),
-      body: JSON.stringify(params),
+  try {
+    const resp = await fetch(
+      `${EDGE_FUNCTIONS_URL}/${AI_ENDPOINTS.appGuide}`,
+      {
+        method: "POST",
+        headers: edgeFunctionHeaders(),
+        body: JSON.stringify(params),
+      }
+    );
+
+    if (!resp.ok || !resp.body) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error || `AI error: ${resp.status}`);
     }
-  );
 
-  if (!resp.ok || !resp.body) {
-    const err = await resp.json().catch(() => ({}));
-    throw new Error(err.error || `AI error: ${resp.status}`);
+    return resp.body;
+  } catch (error) {
+    console.error("[aiService] fetchGuideStream failed:", error);
+    throw error instanceof Error
+      ? error
+      : new Error("AI service unavailable. Please try again later.");
   }
-
-  return resp.body;
 }
 
 /* ------------------------------------------------------------------ */
@@ -102,19 +123,26 @@ export async function fetchGuideStream(params: GuideParams) {
 /* ------------------------------------------------------------------ */
 
 export async function importRecipeFromUrl(url: string) {
-  const resp = await fetch(
-    `${EDGE_FUNCTIONS_URL}/${AI_ENDPOINTS.importRecipeUrl}`,
-    {
-      method: "POST",
-      headers: edgeFunctionHeaders(),
-      body: JSON.stringify({ url }),
+  try {
+    const resp = await fetch(
+      `${EDGE_FUNCTIONS_URL}/${AI_ENDPOINTS.importRecipeUrl}`,
+      {
+        method: "POST",
+        headers: edgeFunctionHeaders(),
+        body: JSON.stringify({ url }),
+      }
+    );
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error || `Import error: ${resp.status}`);
     }
-  );
 
-  if (!resp.ok) {
-    const err = await resp.json().catch(() => ({}));
-    throw new Error(err.error || `Import error: ${resp.status}`);
+    return resp.json();
+  } catch (error) {
+    console.error("[aiService] importRecipeFromUrl failed:", error);
+    throw error instanceof Error
+      ? error
+      : new Error("AI service unavailable. Please try again later.");
   }
-
-  return resp.json();
 }
