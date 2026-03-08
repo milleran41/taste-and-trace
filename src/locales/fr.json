@@ -142,5 +142,7 @@
   "support_author": "Soutenir l'auteur",
   "support_author_message": "Si vous aimez cette application, vous pouvez soutenir l'auteur. Votre soutien nous aide à améliorer et ajouter de nouvelles fonctionnalités !",
   "support_scan_qr": "Scannez le QR code pour soutenir l'auteur.",
-  "ad_placeholder": "Espace publicitaire"
+  "ad_placeholder": "Espace publicitaire",
+  "install_app": "Installer",
+  "offline_message": "Pas de connexion — mode hors ligne"
 }

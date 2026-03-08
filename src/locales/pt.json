@@ -142,5 +142,7 @@
   "support_author": "Apoiar o autor",
   "support_author_message": "Se você gosta deste app, pode apoiar o autor. Seu apoio nos ajuda a melhorar e adicionar novos recursos!",
   "support_scan_qr": "Escaneie o código QR para apoiar o autor. Métodos de pagamento em breve: PayPal, Stripe, cripto e mais.",
-  "ad_placeholder": "Espaço publicitário"
+  "ad_placeholder": "Espaço publicitário",
+  "install_app": "Instalar",
+  "offline_message": "Sem conexão — modo offline"
 }
