@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ChefHat, Plus, Heart, Link2 } from "lucide-react";
+import { ChefHat, Plus, Heart, Link2, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { URLImportModal } from "@/components/URLImportModal";
+import { GuideModal } from "@/components/GuideModal";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { useTranslation } from "react-i18next";
 
