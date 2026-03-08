@@ -42,6 +42,7 @@ The app runs at `http://localhost:5173`.
 
 ```
 src/
+├── assets/           # Static files (icons, images, flags)
 ├── components/       # UI components
 │   ├── ui/           # shadcn/ui primitives
 │   ├── Header.tsx    # Top navigation bar
@@ -51,21 +52,51 @@ src/
 │   ├── AssistantModal.tsx    # AI cooking assistant
 │   ├── RecipeParserDialog.tsx # AI recipe recognition
 │   ├── URLImportModal.tsx    # Import from URL
-│   ├── RightSidebar.tsx      # Right panel
+│   ├── RightSidebar.tsx      # Right panel (support, ads)
+│   ├── SupportModal.tsx      # Support the author
 │   └── ...
+├── config/           # App, AI, and language configuration
+│   ├── appConfig.ts
+│   ├── aiConfig.ts
+│   └── languages.ts
 ├── hooks/            # Custom React hooks
+├── lib/              # Library initialisation (utils)
 ├── locales/          # Translation files (15 languages)
 ├── pages/            # Route pages
+├── services/         # API / business-logic layer
+│   ├── aiService.ts          # AI edge-function calls
+│   ├── recipeService.ts      # Recipe CRUD via Supabase
+│   ├── storageService.ts     # File / image helpers
+│   └── translationService.ts # i18n helpers for non-React code
 ├── types/            # TypeScript types
+├── utils/            # Pure helper functions
+│   ├── formatRecipe.ts
+│   ├── textCleaner.ts
+│   ├── urlValidator.ts
+│   └── ingredientParser.ts
 └── data/             # Static data (measures)
 
 supabase/
-└── functions/        # Edge functions
-    ├── parse-recipe/       # AI recipe extraction
-    ├── recipe-assistant/   # AI cooking Q&A
-    ├── app-guide/          # Interactive guide AI
-    └── import-recipe-url/  # URL import
+├── functions/        # Edge functions
+│   ├── parse-recipe/       # AI recipe extraction
+│   ├── recipe-assistant/   # AI cooking Q&A
+│   ├── app-guide/          # Interactive guide AI
+│   └── import-recipe-url/  # URL import
+├── migrations/       # Database migrations (auto-managed)
+└── seed/             # Seed data
 ```
+
+## 🔑 Environment Variables
+
+Copy `.env.example` to `.env` and fill in values:
+
+```
+VITE_SUPABASE_URL=
+VITE_SUPABASE_PUBLISHABLE_KEY=
+VITE_SUPABASE_PROJECT_ID=
+```
+
+AI keys are managed as backend secrets through Lovable Cloud.
 
 ## 📄 License
 
