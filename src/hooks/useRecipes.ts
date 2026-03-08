@@ -2,6 +2,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Recipe, RecipeFormData } from "@/types/recipe";
 import { toast } from "sonner";
+import i18n from "@/i18n";
+
+const t = (key: string) => i18n.t(key);
 
 export function useRecipes(category?: string) {
   return useQuery({
@@ -86,10 +89,10 @@ export function useCreateRecipe() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recipes"] });
-      toast.success("Рецепт успешно создан!");
+      toast.success(t("recipe_created"));
     },
     onError: () => {
-      toast.error("Ошибка при создании рецепта");
+      toast.error(t("error_creating"));
     },
   });
 }
@@ -99,7 +102,6 @@ export function useUpdateRecipe() {
 
   return useMutation({
     mutationFn: async ({ id, recipe }: { id: string; recipe: Partial<RecipeFormData> }) => {
-      // If category changed, compute new display_order for the target category
       let displayOrder: number | undefined;
       if (recipe.category) {
         const { data: current } = await supabase.from("recipes").select("category").eq("id", id).single();
@@ -143,10 +145,10 @@ export function useUpdateRecipe() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recipes"] });
-      toast.success("Рецепт обновлён!");
+      toast.success(t("recipe_updated"));
     },
     onError: () => {
-      toast.error("Ошибка при обновлении рецепта");
+      toast.error(t("error_updating"));
     },
   });
 }
@@ -161,10 +163,10 @@ export function useDeleteRecipe() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recipes"] });
-      toast.success("Рецепт удалён");
+      toast.success(t("recipe_deleted"));
     },
     onError: () => {
-      toast.error("Ошибка при удалении рецепта");
+      toast.error(t("error_deleting"));
     },
   });
 }
@@ -192,7 +194,6 @@ export function useSwapRecipeOrder() {
 
   return useMutation({
     mutationFn: async ({ recipeA, recipeB }: { recipeA: { id: string; display_order: number }; recipeB: { id: string; display_order: number } }) => {
-      // Swap display_order values
       const { error: e1 } = await supabase.from("recipes").update({ display_order: recipeB.display_order }).eq("id", recipeA.id);
       if (e1) throw e1;
       const { error: e2 } = await supabase.from("recipes").update({ display_order: recipeA.display_order }).eq("id", recipeB.id);
@@ -202,7 +203,7 @@ export function useSwapRecipeOrder() {
       queryClient.invalidateQueries({ queryKey: ["recipes"] });
     },
     onError: () => {
-      toast.error("Ошибка при перемещении рецепта");
+      toast.error(t("error_moving_recipe"));
     },
   });
 }
@@ -212,7 +213,6 @@ export function useMoveRecipeToCategory() {
 
   return useMutation({
     mutationFn: async ({ recipeId, newCategory }: { recipeId: string; newCategory: string }) => {
-      // Get max display_order in target category
       const { data: maxData } = await supabase
         .from("recipes")
         .select("display_order")
@@ -231,10 +231,10 @@ export function useMoveRecipeToCategory() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recipes"] });
-      toast.success("Рецепт перемещён в другую категорию");
+      toast.success(t("recipe_moved"));
     },
     onError: () => {
-      toast.error("Ошибка при перемещении рецепта");
+      toast.error(t("error_moving_recipe"));
     },
   });
 }

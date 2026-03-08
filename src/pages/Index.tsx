@@ -6,10 +6,12 @@ import { CategoryFilter } from "@/components/CategoryFilter";
 import { RecipeGrid } from "@/components/RecipeGrid";
 import { DndRecipeGrid } from "@/components/DndRecipeGrid";
 import { useRecipes, useFavoriteRecipes } from "@/hooks/useRecipes";
+import { useTranslation } from "react-i18next";
 
 export default function Index() {
   const [searchParams] = useSearchParams();
   const showFavorites = searchParams.get("favorites") === "true";
+  const { t } = useTranslation();
   
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -45,10 +47,10 @@ export default function Index() {
           {showFavorites ? (
             <>
               <h1 className="font-display text-3xl md:text-4xl font-bold mb-2">
-                Избранные рецепты
+                {t("favorite_recipes")}
               </h1>
               <p className="text-muted-foreground">
-                Ваши любимые рецепты в одном месте
+                {t("your_favorites_in_one_place")}
               </p>
             </>
           ) : (
@@ -61,20 +63,20 @@ export default function Index() {
               </div>
               <blockquote className="relative z-10">
                 <p className="font-display text-xl md:text-2xl lg:text-3xl font-medium text-foreground leading-relaxed mb-4">
-                  <span className="text-primary">Вы должны любить</span> то, что едите, 
+                  <span className="text-primary">{t("quote_text").split(",")[0]},</span>
                   <br className="hidden md:block" />
-                  или любить человека, которому готовите.
+                  {t("quote_text").split(",").slice(1).join(",")}
                 </p>
                 <p className="font-body text-lg md:text-xl text-muted-foreground italic mb-6">
-                  Приготовление еды – это акт любви.
+                  {t("quote_subtext")}
                 </p>
                 <footer className="flex items-center gap-3">
                   <div className="h-px flex-1 max-w-16 bg-primary/30"></div>
                   <cite className="font-display text-sm md:text-base text-foreground/80 not-italic font-semibold tracking-wide">
-                    Ален Шапель
+                    {t("quote_author")}
                   </cite>
                   <span className="text-muted-foreground text-sm">
-                    шеф-повар
+                    {t("quote_role")}
                   </span>
                 </footer>
               </blockquote>

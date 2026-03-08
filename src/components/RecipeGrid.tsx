@@ -1,6 +1,7 @@
 import { RecipeCard } from "./RecipeCard";
 import { Recipe } from "@/types/recipe";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslation } from "react-i18next";
 
 interface RecipeGridProps {
   recipes: Recipe[];
@@ -8,6 +9,8 @@ interface RecipeGridProps {
 }
 
 export function RecipeGrid({ recipes, isLoading }: RecipeGridProps) {
+  const { t } = useTranslation();
+
   if (isLoading) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
@@ -26,9 +29,9 @@ export function RecipeGrid({ recipes, isLoading }: RecipeGridProps) {
   if (recipes.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground text-lg">Рецепты не найдены</p>
+        <p className="text-muted-foreground text-lg">{t("no_recipes_found")}</p>
         <p className="text-sm text-muted-foreground mt-1">
-          Попробуйте изменить параметры поиска или добавьте новый рецепт
+          {t("try_different_search")}
         </p>
       </div>
     );
