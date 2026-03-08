@@ -3,9 +3,12 @@ import { Link } from "react-router-dom";
 import { ChefHat, Plus, Heart, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { URLImportModal } from "@/components/URLImportModal";
+import { LanguageSelector } from "@/components/LanguageSelector";
+import { useTranslation } from "react-i18next";
 
 export function Header() {
   const [importOpen, setImportOpen] = useState(false);
+  const { t } = useTranslation();
 
   return (
     <>
@@ -20,19 +23,20 @@ export function Header() {
             <Button variant="ghost" size="icon" asChild>
               <Link to="/?favorites=true">
                 <Heart className="h-5 w-5" />
-                <span className="sr-only">Избранное</span>
+                <span className="sr-only">{t("favorites")}</span>
               </Link>
             </Button>
             <Button variant="outline" onClick={() => setImportOpen(true)}>
               <Link2 className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Из ссылки</span>
+              <span className="hidden sm:inline">{t("from_link")}</span>
             </Button>
             <Button asChild>
               <Link to="/add">
                 <Plus className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Добавить рецепт</span>
+                <span className="hidden sm:inline">{t("add_recipe")}</span>
               </Link>
             </Button>
+            <LanguageSelector />
           </nav>
         </div>
       </header>
