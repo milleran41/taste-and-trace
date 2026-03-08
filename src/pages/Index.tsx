@@ -5,9 +5,9 @@ import { SearchBar } from "@/components/SearchBar";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { RecipeGrid } from "@/components/RecipeGrid";
 import { DndRecipeGrid } from "@/components/DndRecipeGrid";
+import { RightSidebar } from "@/components/RightSidebar";
 import { useRecipes, useFavoriteRecipes } from "@/hooks/useRecipes";
 import { useTranslation } from "react-i18next";
-
 export default function Index() {
   const [searchParams] = useSearchParams();
   const showFavorites = searchParams.get("favorites") === "true";
