@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import i18n from "@/i18n";
 
 const t = (key: string) => i18n.t(key);
+const RECIPE_CARD_SELECT = "id,title,category,display_order,description,tags,is_favorite,created_at,updated_at";
 
 export function useRecipes(category?: string) {
   return useQuery({
@@ -12,7 +13,7 @@ export function useRecipes(category?: string) {
     queryFn: async () => {
       let query = supabase
         .from("recipes")
-        .select("*")
+        .select(RECIPE_CARD_SELECT)
         .order("display_order", { ascending: true });
 
       if (category && category !== "all") {
@@ -21,7 +22,7 @@ export function useRecipes(category?: string) {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as Recipe[];
+      return data as unknown as Recipe[];
     },
   });
 }
@@ -43,18 +44,36 @@ export function useRecipe(id: string) {
   });
 }
 
+export function useRecipeCardImage(id: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["recipe-card-image", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("recipes")
+        .select("image,screenshots")
+        .eq("id", id)
+        .single();
+
+      if (error) throw error;
+      return data as Pick<Recipe, "image" | "screenshots">;
+    },
+    enabled: !!id && enabled,
+    staleTime: 1000 * 60 * 10,
+  });
+}
+
 export function useFavoriteRecipes() {
   return useQuery({
     queryKey: ["recipes", "favorites"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("recipes")
-        .select("*")
+        .select(RECIPE_CARD_SELECT)
         .eq("is_favorite", true)
         .order("display_order", { ascending: true });
 
       if (error) throw error;
-      return data as Recipe[];
+      return data as unknown as Recipe[];
     },
   });
 }
@@ -64,12 +83,22 @@ export function useCreateRecipe() {
 
   return useMutation({
     mutationFn: async (recipe: RecipeFormData) => {
+      const { data: maxData } = await supabase
+        .from("recipes")
+        .select("display_order")
+        .eq("category", recipe.category)
+        .order("display_order", { ascending: false })
+        .limit(1);
+
+      const displayOrder = maxData && maxData.length > 0 ? maxData[0].display_order + 1 : 0;
+
       const { data, error } = await supabase
         .from("recipes")
         .insert({
           title: recipe.title,
           description: recipe.description,
           category: recipe.category,
+          display_order: displayOrder,
           cooking_time: recipe.cooking_time,
           difficulty: recipe.difficulty,
           servings: recipe.servings,
@@ -182,6 +211,52 @@ export function useToggleFavorite() {
         .eq("id", id);
 
       if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["recipes"] });
+      queryClient.invalidateQueries({ queryKey: ["recipe", variables.id] });
+    },
+    onError: (error) => {
+      console.error("Toggle favorite error:", error);
+      toast.error(t("error_updating"));
+    },
+  });
+}
+
+export function useReorderRecipes() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (recipes: { id: string; display_order: number }[]) => {
+      const { error } = await supabase
+        .from("recipes")
+        .upsert(recipes as any, { onConflict: "id" });
+      if (error) throw error;
+    },
+    onMutate: async (recipes) => {
+      await queryClient.cancelQueries({ queryKey: ["recipes"] });
+
+      const previousQueries = queryClient.getQueriesData<Recipe[]>({ queryKey: ["recipes"] });
+      const orderById = new Map(recipes.map((recipe) => [recipe.id, recipe.display_order]));
+
+      queryClient.setQueriesData<Recipe[]>({ queryKey: ["recipes"] }, (current) => {
+        if (!current) return current;
+
+        return current
+          .map((recipe) => {
+            const displayOrder = orderById.get(recipe.id);
+            return displayOrder === undefined ? recipe : { ...recipe, display_order: displayOrder };
+          })
+          .sort((a, b) => a.display_order - b.display_order);
+      });
+
+      return { previousQueries };
+    },
+    onError: (_error, _recipes, context) => {
+      context?.previousQueries.forEach(([queryKey, data]) => {
+        queryClient.setQueryData(queryKey, data);
+      });
+      toast.error(t("error_moving_recipe"));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recipes"] });

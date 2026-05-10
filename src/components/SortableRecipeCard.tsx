@@ -1,32 +1,31 @@
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import { memo } from "react";
+import { useDraggable } from "@dnd-kit/core";
 import { RecipeCard } from "./RecipeCard";
 import { Recipe } from "@/types/recipe";
 import { GripVertical } from "lucide-react";
 
 interface SortableRecipeCardProps {
   recipe: Recipe;
+  onPointerEnter?: (recipeId: string) => void;
 }
 
-export function SortableRecipeCard({ recipe }: SortableRecipeCardProps) {
+function SortableRecipeCardComponent({ recipe, onPointerEnter }: SortableRecipeCardProps) {
   const {
     attributes,
     listeners,
     setNodeRef,
-    transform,
-    transition,
     isDragging,
-  } = useSortable({ id: recipe.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-    zIndex: isDragging ? 50 : undefined,
-  };
+  } = useDraggable({ id: recipe.id });
 
   return (
-    <div ref={setNodeRef} style={style} className="relative group/drag">
+    <div
+      ref={setNodeRef}
+      className="relative group/drag"
+      onPointerEnter={() => onPointerEnter?.(recipe.id)}
+      style={{
+        opacity: isDragging ? 0.35 : 1,
+      }}
+    >
       <div
         {...attributes}
         {...listeners}
@@ -38,3 +37,5 @@ export function SortableRecipeCard({ recipe }: SortableRecipeCardProps) {
     </div>
   );
 }
+
+export const SortableRecipeCard = memo(SortableRecipeCardComponent);
