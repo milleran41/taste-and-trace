@@ -2,6 +2,10 @@
 
 AI-powered multilingual recipe management app.
 
+## 📸 Screenshot
+
+![YumBook cookbook interface](public/screenshots/yumbook-cookbook.png)
+
 ## ✨ Features
 
 - **AI Recipe Recognition** — Extract recipes from photos, screenshots, or pasted text
