@@ -2,6 +2,19 @@
 
 AI-powered multilingual recipe management app.
 
+## Download for Windows
+
+[Download Taste & Trace for Windows x64](https://github.com/milleran41/taste-and-trace/releases/download/v0.0.0/Taste%20%26%20Trace-Portable-0.0.0-x64.exe)
+
+Portable app: no installation required. Download the `.exe` file and run it.
+
+## System Requirements
+
+- Windows 10 or Windows 11
+- 64-bit Windows recommended
+- No administrator rights required
+- Windows 7, Windows 8, and Windows 8.1 are not supported
+
 ## 📸 Screenshot
 
 ![YumBook cookbook interface](public/screenshots/yumbook-cookbook.png)
