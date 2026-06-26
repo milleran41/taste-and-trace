@@ -4,7 +4,7 @@ AI-powered multilingual recipe management app.
 
 ## Download for Windows
 
-[Download Taste & Trace for Windows x64](https://github.com/milleran41/taste-and-trace/releases/download/v0.0.0/Taste%20%26%20Trace-Portable-0.0.0-x64.exe)
+[Download Taste & Trace for Windows x64](https://github.com/milleran41/taste-and-trace/releases/download/v0.0.0/Taste.Trace-Portable-0.0.0-x64.exe)
 
 Portable app: no installation required. Download the `.exe` file and run it.
 
