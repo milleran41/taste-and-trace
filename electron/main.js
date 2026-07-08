@@ -38,16 +38,27 @@ function createWindow() {
   const win = new BrowserWindow({
     width: 1200,
     height: 800,
+    title: 'Taste & Trace',
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false
     }
   });
 
-  // Загружаем React/Vite сборку
-  win.loadFile(path.join(__dirname, '../dist/index.html'));
+  const indexPath = path.join(__dirname, 'dist', 'index.html');
+  win.loadFile(indexPath).catch((error) => {
+    win.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(`
+      <html>
+        <body style="font-family: sans-serif; padding: 32px; color: #222;">
+          <h1>Taste & Trace could not start</h1>
+          <p>The desktop app could not load its interface files.</p>
+          <pre style="white-space: pre-wrap; background: #f4f4f4; padding: 16px;">${error.message}
+${indexPath}</pre>
+        </body>
+      </html>
+    `)}`);
+  });
 
-  // Приложение без меню Chromium
   win.setMenuBarVisibility(false);
 }
 
