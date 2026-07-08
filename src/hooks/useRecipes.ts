@@ -7,7 +7,7 @@ import i18n from "@/i18n";
 const t = (key: string) => i18n.t(key);
 const RECIPE_CARD_SELECT = "id,title,category,display_order,description,tags,is_favorite,created_at,updated_at";
 
-export function useRecipes(category?: string) {
+export function useRecipes(category?: string, enabled = true) {
   return useQuery({
     queryKey: ["recipes", category],
     queryFn: async () => {
@@ -24,6 +24,7 @@ export function useRecipes(category?: string) {
       if (error) throw error;
       return data as unknown as Recipe[];
     },
+    enabled,
   });
 }
 
@@ -62,7 +63,7 @@ export function useRecipeCardImage(id: string, enabled: boolean) {
   });
 }
 
-export function useFavoriteRecipes() {
+export function useFavoriteRecipes(enabled = true) {
   return useQuery({
     queryKey: ["recipes", "favorites"],
     queryFn: async () => {
@@ -75,6 +76,7 @@ export function useFavoriteRecipes() {
       if (error) throw error;
       return data as unknown as Recipe[];
     },
+    enabled,
   });
 }
 

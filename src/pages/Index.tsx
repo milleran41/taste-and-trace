@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { SearchBar } from "@/components/SearchBar";
 import { CategoryFilter } from "@/components/CategoryFilter";
@@ -8,18 +8,22 @@ import { DndRecipeGrid } from "@/components/DndRecipeGrid";
 import { RightSidebar } from "@/components/RightSidebar";
 import { useRecipes, useFavoriteRecipes } from "@/hooks/useRecipes";
 import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
+
 export default function Index() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const showFavorites = searchParams.get("favorites") === "true";
+  const showRecipes = searchParams.get("recipes") === "true";
   const { t } = useTranslation();
   
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
   const { data: allRecipes, isLoading: isLoadingAll } = useRecipes(
-    showFavorites ? undefined : selectedCategory !== "all" ? selectedCategory : undefined
+    showFavorites ? undefined : selectedCategory !== "all" ? selectedCategory : undefined,
+    showRecipes
   );
-  const { data: favoriteRecipes, isLoading: isLoadingFavorites } = useFavoriteRecipes();
+  const { data: favoriteRecipes, isLoading: isLoadingFavorites } = useFavoriteRecipes(showFavorites);
 
   const recipes = showFavorites ? favoriteRecipes : allRecipes;
   const isLoading = showFavorites ? isLoadingFavorites : isLoadingAll;
@@ -81,28 +85,45 @@ export default function Index() {
                   </span>
                 </footer>
               </blockquote>
+              {!showRecipes && (
+                <div className="relative z-10 mt-8 flex flex-wrap gap-3">
+                  <Button onClick={() => setSearchParams({ recipes: "true" })}>
+                    {t("all_recipes")}
+                  </Button>
+                  <Button variant="outline" asChild>
+                    <Link to="/?favorites=true">{t("favorites")}</Link>
+                  </Button>
+                  <Button variant="outline" asChild>
+                    <Link to="/add">{t("add_recipe")}</Link>
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </section>
 
-        <section className="space-y-4 mb-8">
-          <SearchBar value={searchQuery} onChange={setSearchQuery} />
-          {!showFavorites && (
-            <CategoryFilter
-              selectedCategory={selectedCategory}
-              onCategoryChange={setSelectedCategory}
-            />
-          )}
-        </section>
+        {(showRecipes || showFavorites) && (
+          <section className="space-y-4 mb-8">
+            <SearchBar value={searchQuery} onChange={setSearchQuery} />
+            {!showFavorites && (
+              <CategoryFilter
+                selectedCategory={selectedCategory}
+                onCategoryChange={setSelectedCategory}
+              />
+            )}
+          </section>
+        )}
 
-        {!showFavorites && selectedCategory !== "all" && !searchQuery.trim() ? (
-          <DndRecipeGrid
-            recipes={filteredRecipes}
-            isLoading={isLoading}
-            selectedCategory={selectedCategory}
-          />
-        ) : (
-          <RecipeGrid recipes={filteredRecipes} isLoading={isLoading} />
+        {(showRecipes || showFavorites) && (
+          !showFavorites && selectedCategory !== "all" && !searchQuery.trim() ? (
+            <DndRecipeGrid
+              recipes={filteredRecipes}
+              isLoading={isLoading}
+              selectedCategory={selectedCategory}
+            />
+          ) : (
+            <RecipeGrid recipes={filteredRecipes} isLoading={isLoading} />
+          )
         )}
         </main>
         <RightSidebar />
