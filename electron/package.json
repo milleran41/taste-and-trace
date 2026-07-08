@@ -1,10 +1,13 @@
 {
   "name": "taste-and-trace-desktop",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "build": "electron-builder"
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.9"
   },
   "devDependencies": {
     "electron": "^26.0.0",
@@ -16,6 +19,14 @@
     "directories": {
       "output": "../dist_electron"
     },
+    "artifactName": "${productName}-Setup-${version}-${arch}.${ext}",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "milleran41",
+        "repo": "taste-and-trace-download"
+      }
+    ],
     "files": [
       "main.js",
       "../dist/**/*"
@@ -28,7 +39,14 @@
     ],
     "win": {
       "icon": "../public/icons/icon-512.png",
-      "target": "nsis"
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
     },
     "mac": {
       "icon": "../public/icons/icon-512.png",
@@ -40,10 +58,13 @@
     },
     "nsis": {
       "oneClick": false,
-      "perMachine": true,
+      "perMachine": false,
+      "allowElevation": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
+      "createStartMenuShortcut": true,
+      "shortcutName": "Taste & Trace",
+      "uninstallDisplayName": "Taste & Trace"
     }
   }
 }
