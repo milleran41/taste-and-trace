@@ -174,7 +174,9 @@ export function useUpdateRecipe() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (updatedRecipe, variables) => {
+      queryClient.setQueryData(["recipe", variables.id], updatedRecipe);
+      queryClient.invalidateQueries({ queryKey: ["recipe", variables.id] });
       queryClient.invalidateQueries({ queryKey: ["recipes"] });
       toast.success(t("recipe_updated"));
     },
