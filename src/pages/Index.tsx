@@ -9,6 +9,7 @@ import { RightSidebar } from "@/components/RightSidebar";
 import { useRecipes, useFavoriteRecipes } from "@/hooks/useRecipes";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 
 export default function Index() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -51,6 +52,12 @@ export default function Index() {
         <section className="mb-10">
           {showFavorites ? (
             <>
+              <Button variant="ghost" asChild className="mb-4 -ml-2">
+                <Link to="/">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  {t("back")}
+                </Link>
+              </Button>
               <h1 className="font-display text-3xl md:text-4xl font-bold mb-2">
                 {t("favorite_recipes")}
               </h1>
