@@ -52,15 +52,16 @@ export default function Index() {
         <section className="mb-10">
           {showFavorites ? (
             <>
-              <Button variant="ghost" asChild className="mb-4 -ml-2">
-                <Link to="/">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  {t("back")}
-                </Link>
-              </Button>
-              <h1 className="font-display text-3xl md:text-4xl font-bold mb-2">
-                {t("favorite_recipes")}
-              </h1>
+              <div className="flex items-center gap-3 mb-2">
+                <Button variant="ghost" size="icon" asChild className="shrink-0">
+                  <Link to="/" aria-label={t("back")} title={t("back")}>
+                    <ArrowLeft className="h-5 w-5" />
+                  </Link>
+                </Button>
+                <h1 className="font-display text-3xl md:text-4xl font-bold">
+                  {t("favorite_recipes")}
+                </h1>
+              </div>
               <p className="text-muted-foreground">
                 {t("your_favorites_in_one_place")}
               </p>
