@@ -1,0 +1,48 @@
+name: Build Windows portable
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build Windows portable
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install app dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Build web app
+        run: pnpm run build
+
+      - name: Install desktop dependencies
+        run: pnpm --dir electron install --no-frozen-lockfile
+
+      - name: Build portable app
+        run: pnpm --dir electron exec electron-builder --win portable --x64 --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Upload portable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: taste-and-trace-windows-portable
+          path: |
+            dist_electron/*.exe
+          if-no-files-found: error
