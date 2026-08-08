@@ -176,3 +176,54 @@ Portable 0.0.0
 ```
 
 and keep all newer portable/installer builds marked as under review or not recommended.
+
+## 2026-08-08 Recovery Update
+
+Original local source/build environment was found at:
+
+```text
+C:\Users\Hyrican\Desktop\Готовые приложения\Кулинарная книга\taste-and-trace-main
+```
+
+That source contains the original root-level build path documented in `Текстовый документ.txt`:
+
+```text
+npm run build
+npm run electron:build:x64
+```
+
+Recovered source-side build configuration from that folder:
+
+- root `package.json` now has `main: electron/main.cjs`;
+- root `package.json` now has `start`, `electron:build`, and `electron:build:x64` scripts;
+- root `package.json` now has the old `electron-builder` portable config that outputs to `release`;
+- `vite.config.ts` now has `base: './'` for Electron/file URL loading;
+- `electron/main.cjs` was restored from the original source and includes the context menu behavior;
+- `public/icons/icon.ico` and `public/icons/icon.icns` were restored;
+- `build-windows-portable.yml` was changed to use the root build path instead of the previously suspicious `pnpm --dir electron` path.
+
+Verification performed:
+
+```text
+npm install
+npm run build
+npm run electron:build:x64 -- --publish never
+```
+
+Result:
+
+```text
+release\Taste & Trace-Portable-0.0.0-x64.exe
+78,643,745 bytes
+```
+
+This build completed successfully, but it is smaller than the old trusted public build size in these notes. The size difference is likely because the old local `dist` folder contained stale assets from earlier builds, while the new test build generated a clean `dist`.
+
+Do not publish this new `.exe` publicly until it has been manually launched and tested on Windows:
+
+- app opens normal UI, not blank;
+- no CSS/code visible in the window;
+- favorites page has a back arrow;
+- editing an existing recipe shows changes without full app restart;
+- start page opens faster and does not load all recipes immediately;
+- categories and drag/move behavior still work.
