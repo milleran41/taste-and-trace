@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import i18n from "@/i18n";
 
 const t = (key: string) => i18n.t(key);
-const RECIPE_CARD_SELECT = "id,title,category,display_order,description,tags,is_favorite,created_at,updated_at";
+const RECIPE_CARD_SELECT = "id,title,category,display_order,description,tags,is_favorite,cooking_time,difficulty,servings,created_at,updated_at";
 
 export function useRecipes(category?: string, enabled = true) {
   return useQuery({
@@ -174,9 +174,7 @@ export function useUpdateRecipe() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (updatedRecipe, variables) => {
-      queryClient.setQueryData(["recipe", variables.id], updatedRecipe);
-      queryClient.invalidateQueries({ queryKey: ["recipe", variables.id] });
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recipes"] });
       toast.success(t("recipe_updated"));
     },
@@ -232,10 +230,17 @@ export function useReorderRecipes() {
 
   return useMutation({
     mutationFn: async (recipes: { id: string; display_order: number }[]) => {
-      const { error } = await supabase
-        .from("recipes")
-        .upsert(recipes as any, { onConflict: "id" });
-      if (error) throw error;
+      const results = await Promise.all(
+        recipes.map((recipe) =>
+          supabase
+            .from("recipes")
+            .update({ display_order: recipe.display_order })
+            .eq("id", recipe.id)
+        )
+      );
+
+      const failed = results.find((result) => result.error);
+      if (failed?.error) throw failed.error;
     },
     onMutate: async (recipes) => {
       await queryClient.cancelQueries({ queryKey: ["recipes"] });
