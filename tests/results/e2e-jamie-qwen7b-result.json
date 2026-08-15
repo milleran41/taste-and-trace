@@ -1,0 +1,64 @@
+{
+  "success": true,
+  "recipe": {
+    "title": "Three Minute Tomato Sauce",
+    "description": "",
+    "ingredients": [
+      "2 cloves garlic, finely sliced",
+      "1 chilli, chopped",
+      "basil leaves, chopped",
+      "tomatoes, crushed by hand",
+      "80 grams frozen peas",
+      "tinned tomatoes (A grade)",
+      "pasta sheets (fresh or dried)"
+    ],
+    "instructions": [
+      "Put a pan on full heat and add a lug of oil.",
+      "Add the garlic and chilli to the pan.",
+      "Add the chopped basil stalks and tomatoes, crushing them by hand.",
+      "Clean out the tin with a little water and add it to the sauce.",
+      "Boil the tomato sauce.",
+      "Use fresh lasagna sheets or any pasta you want, cut into different shapes (tagliolini, tagliotelli, papadelli) or cut badly.",
+      "Cook the pasta in seasoned water, adding a little of the starchy water from the sauce.",
+      "Cook the pasta for the last 30 seconds in the sauce and toss it up.",
+      "Season with salt to taste.",
+      "Drain the pasta and add it back into the sauce, tossing it well.",
+      "Serve with Parmesan cheese, extra virgin olive oil, and feta cheese."
+    ],
+    "cooking_time": "3 minutes",
+    "servings": null,
+    "difficulty": "medium",
+    "tags": [
+      "tomato sauce",
+      "quick",
+      "easy",
+      "comfort food"
+    ],
+    "notes": "",
+    "category_hint": ""
+  },
+  "status": "ok",
+  "timings": {
+    "wall_seconds": 100.19,
+    "timeout_ms": 480000,
+    "input_chars": 5247,
+    "peak_working_set_bytes": 8232701952
+  },
+  "runtime": {
+    "engine": "llama.cpp",
+    "version": "b10330",
+    "executable": "C:\\Users\\Hyrican\\Desktop\\Кулинарная книга\\taste-and-trace-main\\electron\\llama.cpp\\llama-cli.exe"
+  },
+  "model": {
+    "repo": "Qwen/Qwen2.5-3B-Instruct-GGUF",
+    "file": "qwen2.5-3b-instruct-q4_k_m.gguf",
+    "quantization": "Q4_K_M",
+    "path": "C:\\Users\\Hyrican\\AppData\\Roaming\\taste-and-trace\\models\\recipe-parser\\qwen2.5-7b-q4_k_m\\qwen2.5-7b-instruct-q4_k_m-00001-of-00002.gguf",
+    "size_bytes": 3993201344
+  },
+  "e2e": {
+    "parser_wall_seconds": "100.19",
+    "transcript_chars": 5247,
+    "video_duration": 298
+  }
+}

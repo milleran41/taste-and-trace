@@ -1,11 +1,15 @@
-const { app, BrowserWindow } = require("electron");
+const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
+const { registerTranscriptionIpc } = require("./transcription.cjs");
+const { registerLocalRecipeParserIpc } = require("./local-recipe-parser.cjs");
+const { registerVideoRecipePipelineIpc } = require("./video-recipe-pipeline.cjs");
 
 function createWindow() {
   const win = new BrowserWindow({
     width: 1200,
     height: 800,
     webPreferences: {
+      preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -68,7 +72,12 @@ function createWindow() {
   });
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  registerTranscriptionIpc(ipcMain, app);
+  registerLocalRecipeParserIpc(ipcMain, app);
+  registerVideoRecipePipelineIpc(ipcMain, app);
+  createWindow();
+});
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();

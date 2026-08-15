@@ -1,4 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { parseRecipeText, RecipeParserError } from "../_shared/recipe-parser.ts";
+import { detectPlatform, extractYouTubeVideoId, getYouTubeThumbnail } from "../_shared/source-metadata.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,31 +8,354 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-function extractYouTubeVideoId(url: string): string | null {
+function extractTikTokUrl(url: string): boolean {
+  return /tiktok\.com/i.test(url);
+}
+
+type YouTubeCaptionTrack = {
+  baseUrl?: string;
+  languageCode?: string;
+  name?: { simpleText?: string; runs?: { text?: string }[] };
+  kind?: string;
+  vssId?: string;
+};
+
+type YouTubeMetadata = {
+  title: string;
+  description: string;
+  descriptionSource: string;
+  originalLanguage?: string;
+  captionTracks: YouTubeCaptionTrack[];
+  hasPlayerResponse: boolean;
+  hasInitialData: boolean;
+};
+
+const MAX_CAPTION_TRACK_ATTEMPTS = 6;
+
+function decodeHtmlEntities(value: string): string {
+  return value
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#(\d+);/g, (_m, code) => String.fromCharCode(Number(code)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_m, code) => String.fromCharCode(parseInt(code, 16)));
+}
+
+function cleanText(value: string): string {
+  return decodeHtmlEntities(value)
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function extractMetaContent(html: string, nameOrProperty: string): string {
+  const escaped = nameOrProperty.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
+    new RegExp(`<meta\\s+[^>]*(?:name|property)=["']${escaped}["'][^>]*content=["']([^"']*)["'][^>]*>`, "i"),
+    new RegExp(`<meta\\s+[^>]*content=["']([^"']*)["'][^>]*(?:name|property)=["']${escaped}["'][^>]*>`, "i"),
   ];
-  for (const p of patterns) {
-    const m = url.match(p);
-    if (m) return m[1];
+  for (const pattern of patterns) {
+    const match = html.match(pattern);
+    if (match?.[1]) return cleanText(match[1]);
   }
+  return "";
+}
+
+function extractBalancedJsonAfter(html: string, marker: string): unknown | null {
+  const markerIndex = html.indexOf(marker);
+  if (markerIndex === -1) return null;
+
+  const start = html.indexOf("{", markerIndex + marker.length);
+  if (start === -1) return null;
+
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let i = start; i < html.length; i++) {
+    const char = html[i];
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (char === "\\") {
+        escaped = true;
+      } else if (char === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      inString = true;
+    } else if (char === "{") {
+      depth++;
+    } else if (char === "}") {
+      depth--;
+      if (depth === 0) {
+        try {
+          return JSON.parse(html.slice(start, i + 1));
+        } catch {
+          return null;
+        }
+      }
+    }
+  }
+
   return null;
 }
 
-function detectPlatform(url: string): string {
-  if (/youtube\.com|youtu\.be/i.test(url)) return "youtube";
-  if (/tiktok\.com/i.test(url)) return "tiktok";
-  if (/instagram\.com/i.test(url)) return "instagram";
-  if (/vk\.com|vk\.video/i.test(url)) return "vk";
-  return "website";
+function getTextFromRuns(value: any): string {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value.simpleText === "string") return value.simpleText;
+  if (Array.isArray(value.runs)) {
+    return value.runs.map((run: any) => run?.text || "").join("");
+  }
+  return "";
 }
 
-function getYouTubeThumbnail(videoId: string): string {
-  return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+function collectDeepTextValues(root: unknown, predicate: (key: string, value: any) => boolean): string[] {
+  const results: string[] = [];
+  const seen = new Set<unknown>();
+
+  function visit(value: any, key = "") {
+    if (!value || typeof value !== "object" || seen.has(value)) return;
+    seen.add(value);
+
+    if (predicate(key, value)) {
+      const text = getTextFromRuns(value);
+      if (text) results.push(cleanText(text));
+      if (typeof value.content === "string") results.push(cleanText(value.content));
+    }
+
+    if (Array.isArray(value)) {
+      for (const item of value) visit(item, key);
+      return;
+    }
+
+    for (const [childKey, childValue] of Object.entries(value)) {
+      visit(childValue, childKey);
+    }
+  }
+
+  visit(root);
+  return [...new Set(results.filter(Boolean))];
 }
 
-function extractTikTokUrl(url: string): boolean {
-  return /tiktok\.com/i.test(url);
+function pickLongest(values: string[]): string {
+  return values.reduce((best, value) => value.length > best.length ? value : best, "");
+}
+
+function getTrackName(track: YouTubeCaptionTrack): string {
+  return getTextFromRuns(track.name);
+}
+
+function isAutomaticTrack(track: YouTubeCaptionTrack): boolean {
+  return track.kind === "asr" || /^a\./i.test(track.vssId || "");
+}
+
+function normalizeLanguage(value?: string): string {
+  return (value || "").toLowerCase().replace("_", "-");
+}
+
+function rankCaptionTrack(track: YouTubeCaptionTrack, originalLanguage?: string): number {
+  const language = normalizeLanguage(track.languageCode);
+  const original = normalizeLanguage(originalLanguage);
+  let languageRank = 9;
+
+  if (original && language === original) languageRank = 0;
+  else if (original && language.startsWith(`${original}-`)) languageRank = 1;
+  else if (!original && language === "en") languageRank = 2;
+  else if (!original && language.startsWith("en-")) languageRank = 3;
+
+  return languageRank * 10 + (isAutomaticTrack(track) ? 1 : 0);
+}
+
+function selectCaptionTracks(tracks: YouTubeCaptionTrack[], originalLanguage?: string): YouTubeCaptionTrack[] {
+  return [...tracks]
+    .filter((track) => track?.baseUrl)
+    .sort((a, b) => rankCaptionTrack(a, originalLanguage) - rankCaptionTrack(b, originalLanguage));
+}
+
+function parseJson3Captions(raw: string): string {
+  const parsed = JSON.parse(raw);
+  const chunks: string[] = [];
+  for (const event of parsed.events || []) {
+    for (const seg of event.segs || []) {
+      if (seg?.utf8) chunks.push(seg.utf8);
+    }
+  }
+  return cleanText(chunks.join(" "));
+}
+
+function parseVttCaptions(raw: string): string {
+  return cleanText(raw
+    .replace(/\uFEFF/g, "")
+    .split("\n")
+    .filter((line) => {
+      const trimmed = line.trim();
+      return trimmed &&
+        trimmed !== "WEBVTT" &&
+        !trimmed.includes("-->") &&
+        !/^(Kind|Language):/i.test(trimmed) &&
+        !/^\d+$/.test(trimmed);
+    })
+    .join(" ")
+    .replace(/<[^>]+>/g, " "));
+}
+
+function parseXmlCaptions(raw: string): string {
+  return cleanText(raw.replace(/<[^>]+>/g, " "));
+}
+
+function withCaptionFormat(baseUrl: string, format: "json3" | "vtt"): string {
+  try {
+    const url = new URL(baseUrl);
+    url.searchParams.set("fmt", format);
+    return url.toString();
+  } catch {
+    return baseUrl;
+  }
+}
+
+function parseCaptionResponse(raw: string, formatHint: "json3" | "vtt" | "xml"): string {
+  const trimmed = raw.trim();
+  if (!trimmed) return "";
+  if (formatHint === "json3" || trimmed.startsWith("{")) return parseJson3Captions(trimmed);
+  if (formatHint === "vtt" || trimmed.startsWith("WEBVTT")) return parseVttCaptions(trimmed);
+  return parseXmlCaptions(trimmed);
+}
+
+async function fetchCaptionTextFromTrack(track: YouTubeCaptionTrack): Promise<string> {
+  if (!track.baseUrl) return "";
+
+  const attempts: { url: string; format: "json3" | "vtt" | "xml" }[] = [
+    { url: withCaptionFormat(track.baseUrl, "json3"), format: "json3" },
+    { url: withCaptionFormat(track.baseUrl, "vtt"), format: "vtt" },
+    { url: track.baseUrl, format: "xml" },
+  ];
+
+  const tried = new Set<string>();
+  for (const attempt of attempts) {
+    if (tried.has(attempt.url)) continue;
+    tried.add(attempt.url);
+
+    try {
+      const response = await fetch(attempt.url, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+          "Accept-Language": "ru-RU,ru;q=0.9,en;q=0.8",
+          "Accept": "text/vtt,application/json,text/xml,text/plain,*/*;q=0.8",
+        },
+      });
+      if (!response.ok) {
+        console.log("YouTube captions fetch failed:", response.status, attempt.format);
+        if (response.status === 429) throw new Error("CAPTIONS_RATE_LIMITED");
+        continue;
+      }
+      const raw = await response.text();
+      const text = parseCaptionResponse(raw, attempt.format);
+      if (text) return text;
+    } catch (e) {
+      if (e instanceof Error && e.message === "CAPTIONS_RATE_LIMITED") throw e;
+      console.log("YouTube captions parse/fetch failed:", attempt.format, e instanceof Error ? e.message : e);
+    }
+  }
+
+  return "";
+}
+
+async function fetchYouTubeCaptions(
+  tracks: YouTubeCaptionTrack[],
+  originalLanguage: string | undefined,
+  videoId: string,
+): Promise<string> {
+  console.log("YouTube caption tracks found:", videoId, tracks.length);
+  const rankedTracks = selectCaptionTracks(tracks, originalLanguage).slice(0, MAX_CAPTION_TRACK_ATTEMPTS);
+
+  for (const track of rankedTracks) {
+    const automatic = isAutomaticTrack(track);
+    console.log("Trying YouTube caption track:", videoId, {
+      language: track.languageCode || "unknown",
+      automatic,
+      name: getTrackName(track),
+    });
+
+    let text = "";
+    try {
+      text = await fetchCaptionTextFromTrack(track);
+    } catch (e) {
+      if (e instanceof Error && e.message === "CAPTIONS_RATE_LIMITED") {
+        console.log("YouTube captions rate limited, stopping caption attempts:", videoId);
+        break;
+      }
+      console.log("YouTube caption track failed:", videoId, e instanceof Error ? e.message : e);
+    }
+    console.log("YouTube caption track result:", videoId, {
+      language: track.languageCode || "unknown",
+      automatic,
+      length: text.length,
+    });
+    if (text) return text;
+  }
+
+  return "";
+}
+
+function extractYouTubeMetadata(html: string): YouTubeMetadata {
+  const playerResponse = extractBalancedJsonAfter(html, "ytInitialPlayerResponse") as any;
+  const initialData = extractBalancedJsonAfter(html, "ytInitialData") as any;
+
+  const metaTitle = extractMetaContent(html, "title") ||
+    extractMetaContent(html, "og:title") ||
+    cleanText(html.match(/<title>([^<]*)<\/title>/i)?.[1] || "");
+  const title = cleanText(
+    playerResponse?.videoDetails?.title ||
+    getTextFromRuns(playerResponse?.microformat?.playerMicroformatRenderer?.title) ||
+    metaTitle
+  );
+
+  const fullDescription = pickLongest([
+    ...collectDeepTextValues(initialData, (key, value) =>
+      key === "attributedDescription" && typeof value?.content === "string"
+    ),
+  ]);
+  const shortDescription = cleanText(playerResponse?.videoDetails?.shortDescription || "");
+  const microformatDescription = cleanText(getTextFromRuns(
+    playerResponse?.microformat?.playerMicroformatRenderer?.description
+  ));
+  const metaDescription = extractMetaContent(html, "description") || extractMetaContent(html, "og:description");
+
+  const descriptionCandidates = [
+    { source: "initialData", text: fullDescription },
+    { source: "videoDetails.shortDescription", text: shortDescription },
+    { source: "playerResponse.microformat.description", text: microformatDescription },
+    { source: "meta", text: metaDescription },
+  ].filter((candidate) => candidate.text);
+
+  const description = descriptionCandidates[0]?.text || "";
+  const descriptionSource = descriptionCandidates[0]?.source || "none";
+  const captionTracks = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks || [];
+  const detectedOriginalLanguage =
+    playerResponse?.videoDetails?.language ||
+    playerResponse?.microformat?.playerMicroformatRenderer?.audioLanguage ||
+    playerResponse?.microformat?.playerMicroformatRenderer?.defaultAudioLanguage;
+
+  return {
+    title,
+    description,
+    descriptionSource,
+    originalLanguage: detectedOriginalLanguage,
+    captionTracks,
+    hasPlayerResponse: Boolean(playerResponse),
+    hasInitialData: Boolean(initialData),
+  };
 }
 
 async function fetchYouTubeContent(videoId: string): Promise<string> {
@@ -44,116 +369,32 @@ async function fetchYouTubeContent(videoId: string): Promise<string> {
   });
   const html = await resp.text();
 
-  const titleMatch = html.match(/<meta\s+name="title"\s+content="([^"]*)"/) ||
-    html.match(/<meta\s+property="og:title"\s+content="([^"]*)"/) ||
-    html.match(/<title>([^<]*)<\/title>/);
-  const title = titleMatch?.[1] || "";
-
-  const descMatch = html.match(/<meta\s+name="description"\s+content="([^"]*)"/) ||
-    html.match(/<meta\s+property="og:description"\s+content="([^"]*)">/);
-  const description = descMatch?.[1] || "";
-
-  // Extract captions/subtitles - try multiple patterns
   let transcript = "";
+  const metadata = extractYouTubeMetadata(html);
+
   try {
-    const captionPatterns = [
-      /"captions":\s*(\{.*?"playerCaptionsTracklistRenderer".*?\})\s*,\s*"/s,
-      /"playerCaptionsTracklistRenderer":\s*(\{.*?"captionTracks".*?\})/s,
-    ];
-    
-    let tracks: any[] | null = null;
-    for (const pattern of captionPatterns) {
-      const captionMatch = html.match(pattern);
-      if (captionMatch) {
-        try {
-          const captionsJson = JSON.parse(captionMatch[1]);
-          tracks = captionsJson?.playerCaptionsTracklistRenderer?.captionTracks || captionsJson?.captionTracks;
-          if (tracks) break;
-        } catch { /* try next pattern */ }
-      }
-    }
-    
-    if (tracks && tracks.length > 0) {
-      const ruTrack = tracks.find((t: any) => t.languageCode === "ru") || 
-                      tracks.find((t: any) => t.languageCode?.startsWith("ru")) || 
-                      tracks[0];
-      if (ruTrack?.baseUrl) {
-        const captionResp = await fetch(ruTrack.baseUrl);
-        const captionXml = await captionResp.text();
-        transcript = captionXml
-          .replace(/<[^>]+>/g, " ")
-          .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-          .replace(/&quot;/g, '"').replace(/&#39;/g, "'")
-          .replace(/\s+/g, " ").trim();
-      }
-    }
+    transcript = await fetchYouTubeCaptions(metadata.captionTracks, metadata.originalLanguage, videoId);
   } catch (e) {
-    console.log("Could not extract captions:", e);
+    console.log("Could not extract YouTube captions:", videoId, e instanceof Error ? e.message : e);
   }
 
-  // Extract expanded description from ytInitialData - try multiple patterns
-  let expandedDescription = "";
-  try {
-    const dataPatterns = [
-      /var\s+ytInitialData\s*=\s*(\{.+?\});\s*<\/script>/s,
-      /ytInitialData\s*=\s*'(\{.+?\})'\s*;/s,
-      /window\["ytInitialData"\]\s*=\s*(\{.+?\})\s*;/s,
-    ];
-    
-    for (const pattern of dataPatterns) {
-      const initDataMatch = html.match(pattern);
-      if (initDataMatch) {
-        // Try multiple description extraction patterns
-        const descPatterns = [
-          /"attributedDescription":\s*\{"content":\s*"([^"]{20,})"/,
-          /"description":\s*\{"simpleText":\s*"([^"]{20,})"/,
-          /"shortDescription":\s*"([^"]{20,})"/,
-        ];
-        for (const dp of descPatterns) {
-          const descFromData = initDataMatch[1].match(dp);
-          if (descFromData) {
-            expandedDescription = descFromData[1]
-              .replace(/\\n/g, "\n").replace(/\\"/g, '"').replace(/\\\\/g, "\\");
-            break;
-          }
-        }
-        if (expandedDescription) break;
-      }
-    }
-  } catch (e) {
-    console.log("Could not extract ytInitialData description:", e);
-  }
-
-  // Also try ytInitialPlayerResponse for description
-  if (!expandedDescription) {
-    try {
-      const playerMatch = html.match(/var\s+ytInitialPlayerResponse\s*=\s*(\{.+?\});\s*(?:var|<\/script>)/s) ||
-        html.match(/ytInitialPlayerResponse\s*=\s*(\{.+?\})\s*;/s);
-      if (playerMatch) {
-        const shortDescMatch = playerMatch[1].match(/"shortDescription":\s*"((?:[^"\\]|\\.)*)"/s);
-        if (shortDescMatch && shortDescMatch[1].length > 50) {
-          expandedDescription = shortDescMatch[1]
-            .replace(/\\n/g, "\n").replace(/\\"/g, '"').replace(/\\\\/g, "\\");
-        }
-      }
-    } catch (e) {
-      console.log("Could not extract playerResponse:", e);
-    }
-  }
-
-  console.log("YouTube extraction - title:", title.length, "desc:", description.length, 
-    "expanded:", expandedDescription.length, "transcript:", transcript.length);
+  console.log("YouTube extraction summary:", videoId, {
+    playerResponse: metadata.hasPlayerResponse,
+    initialData: metadata.hasInitialData,
+    titleLength: metadata.title.length,
+    descriptionLength: metadata.description.length,
+    descriptionSource: metadata.descriptionSource,
+    captionTracks: metadata.captionTracks.length,
+    transcriptLength: transcript.length,
+  });
 
   // Be more lenient - allow if we have at least a description with some content
-  if (!transcript && expandedDescription.length < 50 && description.length < 50) {
+  if (!transcript && metadata.description.length < 50) {
     throw new Error("NO_CONTENT");
   }
 
-  const parts = [`Название видео: ${title}`];
-  if (description) parts.push(`Описание: ${description}`);
-  if (expandedDescription && expandedDescription.length > description.length) {
-    parts.push(`Полное описание: ${expandedDescription}`);
-  }
+  const parts = [`Название видео: ${metadata.title}`];
+  if (metadata.description) parts.push(`Описание видео: ${metadata.description}`);
   if (transcript) parts.push(`Субтитры видео:\n${transcript.slice(0, 15000)}`);
 
   return parts.join("\n\n");
@@ -262,124 +503,40 @@ serve(async (req) => {
     } catch (fetchError: any) {
       if (fetchError?.message === "NO_CONTENT") {
         return new Response(
-          JSON.stringify({ error: "Не удалось получить данные из источника. Нет субтитров, описания или текста на странице." }),
+          JSON.stringify({
+            error: "Не удалось получить данные из источника. Нет субтитров, описания или текста на странице.",
+            code: "VIDEO_TEXT_INSUFFICIENT",
+          }),
           { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       console.error("Error fetching URL:", fetchError);
-      return new Response(
-        JSON.stringify({ error: "Не удалось загрузить страницу. Проверьте ссылку и попробуйте снова." }),
-        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+        return new Response(
+          JSON.stringify({
+            error: "Не удалось загрузить страницу. Проверьте ссылку и попробуйте снова.",
+            code: "SOURCE_FETCH_FAILED",
+          }),
+          { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
     }
 
     console.log("Sending to AI, content length:", pageContent.length);
 
-    const systemPrompt = `Ты — строгий парсер кулинарных рецептов. Извлеки рецепт из текста и верни ТОЛЬКО валидный JSON.
-
-КРИТИЧЕСКИ ВАЖНЫЕ ПРАВИЛА:
-- ИЗВЛЕКАЙ ТОЛЬКО ТО, ЧТО РЕАЛЬНО ЕСТЬ В ТЕКСТЕ
-- ЗАПРЕЩЕНО придумывать ингредиенты, шаги или данные
-- Если в тексте нет конкретных ингредиентов — верни пустой массив
-- Если шаги не описаны явно, но есть субтитры видео с описанием процесса приготовления — восстанови пошаговые инструкции из субтитров, разбив процесс на логические шаги
-- Если данных недостаточно для рецепта — верни JSON с полем "error": "Недостаточно данных для извлечения рецепта"
-- Удали разговорную речь, рекламу, личные истории
-- Пиши на языке оригинала рецепта
-- difficulty ДОЛЖЕН быть: "easy", "medium" или "hard"
-
-Верни JSON:
-{
-  "title": "название из текста",
-  "description": "краткое описание (если есть в тексте)",
-  "ingredients": ["точно как в тексте с количествами"],
-  "instructions": ["шаги из текста"],
-  "cooking_time": "время (если указано)",
-  "servings": число_порций_или_null,
-  "difficulty": "easy|medium|hard",
-  "tags": ["теги если есть"],
-  "notes": "полезные советы из текста",
-  "category_hint": "категория",
-  "source": "${url}"
-}
-
-Если рецепт невозможно извлечь, верни:
-{"error": "Недостаточно данных для извлечения рецепта"}`;
-
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: `Извлеки рецепт СТРОГО из этого текста (не придумывай ничего):\n\n${pageContent}` },
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      if (response.status === 429) {
+    let parsed: Record<string, unknown>;
+    try {
+      parsed = await parseRecipeText({
+        apiKey: LOVABLE_API_KEY,
+        text: pageContent,
+        context: { sourceUrl: url },
+      });
+    } catch (error) {
+      if (error instanceof RecipeParserError) {
         return new Response(
-          JSON.stringify({ error: "Превышен лимит запросов, попробуйте позже" }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({ error: error.message, code: error.code }),
+          { status: error.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Недостаточно кредитов AI" }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
-      throw new Error(`AI gateway error: ${response.status}`);
-    }
-
-    const aiResult = await response.json();
-    const rawContent = aiResult.choices?.[0]?.message?.content ?? "";
-
-    const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.error("No JSON found in response:", rawContent);
-      return new Response(
-        JSON.stringify({ error: "Не удалось распознать рецепт на этой странице" }),
-        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const parsed = JSON.parse(jsonMatch[0]);
-
-    // If AI returned an error (insufficient data)
-    if (parsed.error) {
-      return new Response(
-        JSON.stringify({ error: parsed.error }),
-        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Validate: must have at least a title
-    if (!parsed.title) {
-      return new Response(
-        JSON.stringify({ error: "Не удалось извлечь достаточно данных для рецепта из этого источника" }),
-        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Ensure arrays exist even if empty
-    if (!parsed.ingredients) parsed.ingredients = [];
-    if (!parsed.instructions) parsed.instructions = [];
-
-    // Normalize difficulty
-    const difficultyMap: Record<string, string> = {
-      "легко": "easy", "easy": "easy", "простой": "easy",
-      "средне": "medium", "medium": "medium", "средний": "medium",
-      "сложно": "hard", "hard": "hard", "сложный": "hard",
-    };
-    if (parsed.difficulty) {
-      parsed.difficulty = difficultyMap[parsed.difficulty.toLowerCase()] || "medium";
+      throw error;
     }
 
     // Build source metadata
@@ -416,7 +573,7 @@ serve(async (req) => {
   } catch (e) {
     console.error("import-recipe-url error:", e);
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Неизвестная ошибка" }),
+      JSON.stringify({ error: e instanceof Error ? e.message : "Неизвестная ошибка", code: "IMPORT_RECIPE_URL_FAILED" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

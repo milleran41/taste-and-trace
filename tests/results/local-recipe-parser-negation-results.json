@@ -1,0 +1,59 @@
+[
+  {
+    "fixture": "negation_de",
+    "negation_evidence_count": 1,
+    "negation_evidence": [
+      "Die Nudeln nicht abgießen."
+    ],
+    "success": true,
+    "warning_codes": [
+      "POSSIBLE_MISSING_INGREDIENT"
+    ],
+    "quality": "low",
+    "needs_review": true
+  },
+  {
+    "fixture": "negation_en",
+    "negation_evidence_count": 1,
+    "negation_evidence": [
+      "Do not drain the pasta and let it steam."
+    ],
+    "success": true,
+    "warning_codes": [],
+    "quality": "low",
+    "needs_review": true
+  },
+  {
+    "fixture": "negation_es",
+    "negation_evidence_count": 1,
+    "negation_evidence": [
+      "No escurras la pasta."
+    ],
+    "success": true,
+    "warning_codes": [],
+    "quality": "medium",
+    "needs_review": true
+  },
+  {
+    "fixture": "negation_fr",
+    "negation_evidence_count": 1,
+    "negation_evidence": [
+      "Ne pas égoutter les pâtes."
+    ],
+    "success": false,
+    "warning_codes": [],
+    "quality": null,
+    "needs_review": null
+  },
+  {
+    "fixture": "negation_ru",
+    "negation_evidence_count": 1,
+    "negation_evidence": [
+      "Макароны не сливайте."
+    ],
+    "success": true,
+    "warning_codes": [],
+    "quality": "low",
+    "needs_review": true
+  }
+]

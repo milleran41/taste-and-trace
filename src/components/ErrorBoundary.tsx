@@ -28,10 +28,25 @@ export class ErrorBoundary extends Component<Props, State> {
     window.location.reload();
   };
 
-  private handleHardReload = () => {
+  private handleHardReload = async () => {
+    const currentUrl = window.location.href;
     sessionStorage.clear();
     localStorage.clear();
-    window.location.href = window.location.href.split("?")[0] + "?t=" + Date.now();
+
+    if ("caches" in window) {
+      const cacheNames = await caches.keys();
+      await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
+    }
+
+    if ("serviceWorker" in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map((registration) => registration.unregister()));
+    }
+
+    const cacheBuster = `cache_bust=${Date.now()}`;
+    const [baseUrl, hash = ""] = currentUrl.split("#");
+    const cleanBaseUrl = baseUrl.split("?")[0];
+    window.location.href = `${cleanBaseUrl}?${cacheBuster}${hash ? `#${hash}` : ""}`;
   };
 
   public render() {
@@ -50,7 +65,10 @@ export class ErrorBoundary extends Component<Props, State> {
             {this.state.error && (
               <details className="mb-6 text-left">
                 <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">Details</summary>
-                <pre className="mt-2 p-3 bg-muted rounded-lg text-xs text-foreground overflow-auto max-h-32">{this.state.error.message}</pre>
+                <pre className="mt-2 p-3 bg-muted rounded-lg text-xs text-foreground overflow-auto max-h-64 whitespace-pre-wrap">
+                  {this.state.error.message}
+                  {this.state.error.stack ? `\n\n${this.state.error.stack}` : ""}
+                </pre>
               </details>
             )}
             <div className="flex flex-col sm:flex-row gap-3 justify-center">

@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { FolderOpen, GripVertical, Heart, Link2, Plus, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
+import { URLImportModal } from "@/components/URLImportModal";
 import culinaryBookHomeImage from "@/assets/culinary-book-home.jpg";
 
 const steps = [
@@ -29,8 +31,10 @@ const steps = [
 
 export function HomePage() {
   const { t } = useTranslation();
+  const [importOpen, setImportOpen] = useState(false);
 
   return (
+    <>
     <div className="space-y-10">
       <section className="relative overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
         <div className="grid gap-0 lg:grid-cols-[1.05fr_0.95fr]">
@@ -51,6 +55,10 @@ export function HomePage() {
                   <Plus className="mr-2 h-4 w-4" />
                   {t("add_recipe")}
                 </Link>
+              </Button>
+              <Button variant="outline" type="button" onClick={() => setImportOpen(true)}>
+                <Link2 className="mr-2 h-4 w-4" />
+                {t("from_link")}
               </Button>
               <Button variant="outline" asChild>
                 <Link to="/?favorites=true">
@@ -95,10 +103,10 @@ export function HomePage() {
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
             {t("home_import_text")}
           </p>
-          <div className="mt-4 flex items-center gap-2 text-sm text-primary">
-            <Link2 className="h-4 w-4" />
+          <Button variant="outline" type="button" onClick={() => setImportOpen(true)} className="mt-4">
+            <Link2 className="mr-2 h-4 w-4" />
             {t("home_import_note")}
-          </div>
+          </Button>
         </div>
         <div className="rounded-lg border bg-card p-5">
           <h2 className="font-display text-lg font-semibold">{t("home_categories_title")}</h2>
@@ -114,5 +122,7 @@ export function HomePage() {
         </div>
       </section>
     </div>
+    <URLImportModal open={importOpen} onClose={() => setImportOpen(false)} />
+    </>
   );
 }

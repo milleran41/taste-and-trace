@@ -1,11 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Recipe, RecipeFormData } from "@/types/recipe";
+import { cleanRecipeSections } from "@/utils/recipeContent";
+import { getRecipeSource, getRecipeTranslationGroupId, isRecipeTranslation } from "@/utils/recipeVersions";
 import { toast } from "sonner";
 import i18n from "@/i18n";
 
 const t = (key: string) => i18n.t(key);
-const RECIPE_CARD_SELECT = "id,title,category,display_order,description,tags,is_favorite,cooking_time,difficulty,servings,created_at,updated_at";
+const tr = (key: string, fallback: string) => {
+  const value = i18n.t(key);
+  return value === key ? fallback : value;
+};
+const RECIPE_CARD_SELECT = "id,title,category,display_order,description,tags,is_favorite,cooking_time,difficulty,servings,created_at,updated_at,source";
 
 export function useRecipes(category?: string, enabled = true) {
   return useQuery({
@@ -22,7 +28,7 @@ export function useRecipes(category?: string, enabled = true) {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as unknown as Recipe[];
+      return (data as unknown as Recipe[]).filter((recipe) => !isRecipeTranslation(recipe));
     },
     enabled,
   });
@@ -42,6 +48,72 @@ export function useRecipe(id: string) {
       return data as Recipe;
     },
     enabled: !!id,
+  });
+}
+
+export function useRecipeVersions(recipe?: Recipe | null) {
+  const groupId = getRecipeTranslationGroupId(recipe);
+  const recipeSource = getRecipeSource(recipe);
+  const originalRecipeId =
+    recipe?.source && typeof recipe.source === "object" && !Array.isArray(recipe.source) && typeof (recipe.source as any).originalRecipeId === "string"
+      ? (recipe.source as any).originalRecipeId
+      : groupId;
+
+  return useQuery({
+    queryKey: ["recipe-versions", groupId, originalRecipeId, recipeSource.sourceUrl],
+    queryFn: async () => {
+      const byId = new Map<string, Recipe>();
+
+      if (originalRecipeId) {
+        const { data: original, error: originalError } = await supabase
+          .from("recipes")
+          .select("*")
+          .eq("id", originalRecipeId)
+          .maybeSingle();
+        if (originalError) throw originalError;
+        if (original) byId.set(original.id, original as Recipe);
+      }
+
+      if (groupId) {
+        const { data: translations, error: translationsError } = await supabase
+          .from("recipes")
+          .select("*")
+          .filter("source->>translationGroupId", "eq", groupId)
+          .order("created_at", { ascending: true });
+        if (translationsError) throw translationsError;
+        for (const item of translations || []) {
+          byId.set(item.id, item as Recipe);
+        }
+      }
+
+      if (recipeSource.sourceUrl) {
+        const { data: sameSourceRecipes, error: sameSourceError } = await supabase
+          .from("recipes")
+          .select("*")
+          .filter("source->>sourceUrl", "eq", recipeSource.sourceUrl)
+          .order("created_at", { ascending: true });
+        if (sameSourceError) throw sameSourceError;
+        for (const item of sameSourceRecipes || []) {
+          const candidate = item as Recipe;
+          const candidateSource = getRecipeSource(candidate);
+          if (
+            candidate.id === originalRecipeId ||
+            candidate.id === groupId ||
+            candidateSource.isTranslation === true ||
+            candidateSource.translationGroupId === groupId ||
+            candidateSource.originalRecipeId === originalRecipeId ||
+            candidateSource.translationGroupId === originalRecipeId ||
+            candidateSource.originalRecipeId === groupId
+          ) {
+            byId.set(candidate.id, candidate);
+          }
+        }
+      }
+
+      if (recipe) byId.set(recipe.id, recipe);
+      return Array.from(byId.values());
+    },
+    enabled: !!recipe?.id,
   });
 }
 
@@ -74,7 +146,7 @@ export function useFavoriteRecipes(enabled = true) {
         .order("display_order", { ascending: true });
 
       if (error) throw error;
-      return data as unknown as Recipe[];
+      return (data as unknown as Recipe[]).filter((recipe) => !isRecipeTranslation(recipe));
     },
     enabled,
   });
@@ -85,6 +157,7 @@ export function useCreateRecipe() {
 
   return useMutation({
     mutationFn: async (recipe: RecipeFormData) => {
+      const cleanedSections = cleanRecipeSections(recipe.ingredients, recipe.instructions);
       const { data: maxData } = await supabase
         .from("recipes")
         .select("display_order")
@@ -104,13 +177,13 @@ export function useCreateRecipe() {
           cooking_time: recipe.cooking_time,
           difficulty: recipe.difficulty,
           servings: recipe.servings,
-          ingredients: recipe.ingredients,
-          instructions: recipe.instructions,
+          ingredients: cleanedSections.ingredients,
+          instructions: cleanedSections.instructions,
           notes: recipe.notes,
           tags: recipe.tags,
           image: recipe.image,
-          screenshots: (recipe as any).screenshots || [],
-          source: (recipe as any).source || null,
+          screenshots: recipe.screenshots || [],
+          source: recipe.source || null,
         })
         .select()
         .single();
@@ -118,8 +191,13 @@ export function useCreateRecipe() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["recipes"] });
+      queryClient.invalidateQueries({ queryKey: ["recipe-versions"] });
+      if (data?.id) {
+        queryClient.setQueryData(["recipe", data.id], data as Recipe);
+        queryClient.invalidateQueries({ queryKey: ["recipe", data.id] });
+      }
       toast.success(t("recipe_created"));
     },
     onError: () => {
@@ -133,6 +211,10 @@ export function useUpdateRecipe() {
 
   return useMutation({
     mutationFn: async ({ id, recipe }: { id: string; recipe: Partial<RecipeFormData> }) => {
+      const shouldCleanSections = recipe.ingredients !== undefined || recipe.instructions !== undefined;
+      const cleanedSections = shouldCleanSections
+        ? cleanRecipeSections(recipe.ingredients, recipe.instructions)
+        : null;
       let displayOrder: number | undefined;
       if (recipe.category) {
         const { data: current } = await supabase.from("recipes").select("category").eq("id", id).single();
@@ -154,8 +236,8 @@ export function useUpdateRecipe() {
         cooking_time: recipe.cooking_time || null,
         difficulty: recipe.difficulty || null,
         servings: recipe.servings,
-        ingredients: recipe.ingredients,
-        instructions: recipe.instructions,
+        ingredients: recipe.ingredients !== undefined ? cleanedSections?.ingredients : recipe.ingredients,
+        instructions: shouldCleanSections ? cleanedSections?.instructions : recipe.instructions,
         notes: recipe.notes,
         tags: recipe.tags,
         image: recipe.image,
@@ -174,8 +256,13 @@ export function useUpdateRecipe() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["recipes"] });
+      if (data?.id) {
+        queryClient.setQueryData(["recipe", data.id], data as Recipe);
+        queryClient.invalidateQueries({ queryKey: ["recipe", data.id] });
+      }
+      queryClient.invalidateQueries({ queryKey: ["recipe-versions"] });
       toast.success(t("recipe_updated"));
     },
     onError: () => {
@@ -188,16 +275,39 @@ export function useDeleteRecipe() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("recipes").delete().eq("id", id);
+    mutationFn: async (idOrIds: string | string[]) => {
+      const ids = Array.isArray(idOrIds) ? idOrIds.filter(Boolean) : [idOrIds].filter(Boolean);
+      if (ids.length === 0) return ids;
+
+      const query = supabase.from("recipes").delete();
+      const { data, error } = ids.length === 1
+        ? await query.eq("id", ids[0]).select("id")
+        : await query.in("id", ids).select("id");
       if (error) throw error;
+
+      const deletedIds = (data || []).map((row) => String(row.id));
+      if (deletedIds.length === 0) {
+        throw new Error(tr("recipe_delete_no_rows", "Recipe was not deleted. Please try again after reopening the app."));
+      }
+      if (deletedIds.length < ids.length) {
+        console.warn("Some recipe versions were not deleted:", {
+          requestedIds: ids,
+          deletedIds,
+        });
+      }
+      return deletedIds;
     },
-    onSuccess: () => {
+    onSuccess: (deletedIds) => {
       queryClient.invalidateQueries({ queryKey: ["recipes"] });
+      for (const id of deletedIds || []) {
+        queryClient.removeQueries({ queryKey: ["recipe", id] });
+      }
+      queryClient.invalidateQueries({ queryKey: ["recipe-versions"] });
       toast.success(t("recipe_deleted"));
     },
-    onError: () => {
-      toast.error(t("error_deleting"));
+    onError: (error) => {
+      console.error("Delete recipe error:", error);
+      toast.error(error instanceof Error ? error.message : t("error_deleting"));
     },
   });
 }

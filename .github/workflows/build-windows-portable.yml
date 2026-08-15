@@ -20,8 +20,27 @@ jobs:
         with:
           node-version: 20
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
       - name: Install dependencies
         run: npm install
+
+      - name: Download local recipe runtime
+        run: npm run recipe-parser:download-runtime
+
+      - name: Prepare ffmpeg for transcription helper
+        shell: powershell
+        run: |
+          choco install ffmpeg -y --no-progress
+          $ffmpeg = (Get-Command ffmpeg.exe).Source
+          New-Item -ItemType Directory -Force transcription-service/vendor/ffmpeg/bin | Out-Null
+          Copy-Item -LiteralPath $ffmpeg -Destination transcription-service/vendor/ffmpeg/bin/ffmpeg.exe -Force
+
+      - name: Build transcription helper
+        run: npm run transcription:build-helper
 
       - name: Build web app
         run: npm run build

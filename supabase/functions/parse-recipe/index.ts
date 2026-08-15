@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { extractJsonObject, normalizeDifficulty, RecipeParserError } from "../_shared/recipe-parser.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -114,24 +115,9 @@ CRITICAL RULES:
     const aiResult = await response.json();
     const rawContent = aiResult.choices?.[0]?.message?.content ?? "";
 
-    // Extract JSON from response
-    const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.error("No JSON found in response:", rawContent);
-      throw new Error("AI не вернул корректный JSON");
-    }
+    const parsed = extractJsonObject(rawContent, "AI не вернул корректный JSON", 500) as Record<string, unknown>;
 
-    const parsed = JSON.parse(jsonMatch[0]);
-
-    // Normalize difficulty to allowed DB values
-    const difficultyMap: Record<string, string> = {
-      "легко": "easy", "easy": "easy", "простой": "easy", "просто": "easy",
-      "средне": "medium", "medium": "medium", "средний": "medium",
-      "сложно": "hard", "hard": "hard", "сложный": "hard",
-    };
-    if (parsed.difficulty) {
-      parsed.difficulty = difficultyMap[parsed.difficulty.toLowerCase()] || "medium";
-    }
+    parsed.difficulty = normalizeDifficulty(parsed.difficulty);
 
     return new Response(JSON.stringify(parsed), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -141,9 +127,10 @@ CRITICAL RULES:
     return new Response(
       JSON.stringify({
         error: e instanceof Error ? e.message : "Неизвестная ошибка",
+        code: e instanceof RecipeParserError ? e.code : "PARSE_RECIPE_FAILED",
       }),
       {
-        status: 500,
+        status: e instanceof RecipeParserError ? e.status : 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );

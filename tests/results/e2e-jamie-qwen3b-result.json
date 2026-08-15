@@ -1,0 +1,67 @@
+{
+  "success": true,
+  "recipe": {
+    "title": "Three Minute Tomato Sauce",
+    "description": "A quick and easy tomato sauce that can be adapted with various ingredients for a flavorful dish.",
+    "ingredients": [
+      "2 cloves garlic, finely sliced",
+      "1 chilli, finely sliced (with seeds removed)",
+      "basil leaves",
+      "tomatoes, cleaned and crushed by hand",
+      "80 grams frozen peas"
+    ],
+    "instructions": [
+      "Put a pan on full heat.",
+      "Add oil to the pan.",
+      "Add garlic and chilli to the pan.",
+      "Add chopped basil stalks to the pan.",
+      "Add crushed tomatoes to the pan.",
+      "Add fresh pasta sheets (lasagna sheets) to the seasoned water.",
+      "Drain the pasta in a colander, but do not steam it. Instead, feed it just a little bit of the starchy water.",
+      "Cook the pasta for 30 seconds in the sauce.",
+      "Season to taste with extra virgin olive oil and feta cheese.",
+      "Serve on a platter with small basil leaves and a kiss of extra virgin olive oil."
+    ],
+    "cooking_time": "3 minutes",
+    "servings": null,
+    "difficulty": "easy",
+    "tags": [
+      "tomato sauce",
+      "quick meal",
+      "comfort food"
+    ],
+    "notes": "This recipe can be adapted with various ingredients for a flavorful dish. The pasta sheets are fresh and available in supermarkets, making it easy to use any pasta you prefer.",
+    "category_hint": "main course"
+  },
+  "status": "ok",
+  "timings": {
+    "wall_seconds": 45.83,
+    "timeout_ms": 480000,
+    "input_chars": 5247,
+    "peak_working_set_bytes": 3795546112
+  },
+  "runtime": {
+    "engine": "llama.cpp",
+    "version": "b10330",
+    "executable": "C:\\Users\\Hyrican\\Desktop\\Кулинарная книга\\taste-and-trace-main\\electron\\llama.cpp\\llama-cli.exe"
+  },
+  "model": {
+    "repo": "Qwen/Qwen2.5-3B-Instruct-GGUF",
+    "file": "qwen2.5-3b-instruct-q4_k_m.gguf",
+    "quantization": "Q4_K_M",
+    "path": "C:\\Users\\Hyrican\\AppData\\Roaming\\taste-and-trace\\models\\recipe-parser\\qwen2.5-3b-instruct-q4_k_m.gguf",
+    "size_bytes": 2104932768
+  },
+  "e2e": {
+    "parser_wall_seconds": "45.84",
+    "transcript_chars": 5247,
+    "video_duration": 298,
+    "transcription_timings": {
+      "metadata_seconds": 1.7,
+      "download_seconds": 3.49,
+      "model_load_seconds": 2.51,
+      "transcription_seconds": 87.51,
+      "total_seconds": 95.21
+    }
+  }
+}

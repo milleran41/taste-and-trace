@@ -1,0 +1,207 @@
+{
+  "success": true,
+  "recipe": {
+    "title": "Three Minute Tomato Sauce",
+    "description": "A quick and easy tomato sauce made with chilli, garlic, basil, tomatoes, and pasta. The recipe also includes frozen peas and optional ingredients like tuna or olives.",
+    "ingredients": [
+      "2 cloves garlic, finely sliced",
+      "1 chilli, finely sliced",
+      "basil leaves",
+      "tomatoes, whole",
+      "lasagna sheets",
+      "80 grams frozen peas"
+    ],
+    "instructions": [
+      "Put a pan on full heat.",
+      "Add the garlic and chilli to the pan.",
+      "Slice the basil stalks and add them to the pan.",
+      "Chop the tomatoes and rub them in your hand to break them up.",
+      "Clean out the tin with a little swig of water.",
+      "Add the chopped tomatoes to the pan.",
+      "Add the lasagna sheets to the pan.",
+      "Cook the pasta in the seasoned water.",
+      "Drain the pasta and feed it just a little bit of the water.",
+      "Toss the pasta in the sauce for 30 seconds.",
+      "Season the pasta to taste.",
+      "Add Parmesan cheese to the pasta.",
+      "Top with smaller basil leaves, extra virgin olive oil, and feta cheese."
+    ],
+    "cooking_time": "3 minutes",
+    "servings": null,
+    "difficulty": "easy",
+    "tags": [
+      "tomato sauce",
+      "quick recipe",
+      "comfort food"
+    ],
+    "notes": "The heat is in the white part of the chilli and the seeds. Use your hand to crush the tomatoes for a better flavor. The water from cooking the pasta can be used to make the dish more flavorful.",
+    "category_hint": "main course"
+  },
+  "quality": {
+    "score": "low",
+    "needs_review": true,
+    "warnings": [
+      {
+        "code": "NEGATION_CONFLICT",
+        "message": "Generated pasta-draining instruction conflicts with transcript caution about draining/steaming pasta.",
+        "instruction": "Drain the pasta and feed it just a little bit of the water.",
+        "evidence": "Source transcript discusses draining pasta in a colander and becoming claggy.",
+        "matched_keywords": [
+          "drain",
+          "claggy"
+        ]
+      }
+    ],
+    "evidence_counts": {
+      "numeric": 4,
+      "negations": 3,
+      "ingredient_like": 16
+    }
+  },
+  "evidence": {
+    "numeric": [
+      {
+        "text": "Hey lovely people, we are going to do a three minute tomato sauce that is so delicious, so quick, so easy.",
+        "matches": [
+          "three minute"
+        ]
+      },
+      {
+        "text": "Let's do a three minute tomato sauce.",
+        "matches": [
+          "three minute"
+        ]
+      },
+      {
+        "text": "So best friends, garlic, two cloves, finely sliced, garlic's one of those things that just brings flavour together.",
+        "matches": [
+          "two cloves"
+        ]
+      },
+      {
+        "text": "80 grams, that's a portion.",
+        "matches": [
+          "80 grams"
+        ]
+      }
+    ],
+    "negations": [
+      {
+        "text": "The heat's not really in the red fruit, it's in the little white part here and the seeds.",
+        "keywords": []
+      },
+      {
+        "text": "So first up, I'll take the leaves off but these stalks, don't throw these stalks away.",
+        "keywords": []
+      },
+      {
+        "text": "You don't need a blender, you don't need a sieve, use your hand, so crush it up.",
+        "keywords": [
+          "blend",
+          "sieve"
+        ]
+      }
+    ],
+    "ingredients": [
+      {
+        "name": "tomato",
+        "text": "Hey lovely people, we are going to do a three minute tomato sauce that is so delicious, so quick, so easy."
+      },
+      {
+        "name": "chilli",
+        "text": "On the journey that I've been in food around the world, I've eaten some incredible things but sometimes when I'm busy, sometimes when I want comfort food, I go back to this kind of dish and to make me happy is this, your humble chilli."
+      },
+      {
+        "name": "garlic",
+        "text": "So best friends, garlic, two cloves, finely sliced, garlic's one of those things that just brings flavour together."
+      },
+      {
+        "name": "oil",
+        "text": "We're going to go in a pan with a nice little lug of oil."
+      },
+      {
+        "name": "basil",
+        "text": "I'm going to use basil."
+      },
+      {
+        "name": "tomatoes",
+        "text": "Then I'm going to go in with some tomatoes."
+      },
+      {
+        "name": "pasta",
+        "text": "Also I'll clean out this tin with just a little swig of water so that pasta sauce is pretty much done now."
+      },
+      {
+        "name": "water",
+        "text": "Also I'll clean out this tin with just a little swig of water so that pasta sauce is pretty much done now."
+      },
+      {
+        "name": "lasagna sheets",
+        "text": "Here it is every day fresh lasagna sheets from the supermarkets."
+      },
+      {
+        "name": "peas",
+        "text": "I've got some frozen peas."
+      },
+      {
+        "name": "tuna",
+        "text": "So there could be a little bit of flaked tin tuna in there."
+      },
+      {
+        "name": "olives",
+        "text": "There could be olives in there."
+      },
+      {
+        "name": "parmesan",
+        "text": "Now one of my favorite cheeses to have, of course, with a pasta like this is a Parmesan."
+      },
+      {
+        "name": "olive oil",
+        "text": "Now we can have the smaller basil leaves on top, a kiss of nice extra virgin olive oil and a little tweak."
+      },
+      {
+        "name": "extra virgin olive oil",
+        "text": "Now we can have the smaller basil leaves on top, a kiss of nice extra virgin olive oil and a little tweak."
+      },
+      {
+        "name": "feta",
+        "text": "Take your humble feta and go for long strokes because it's all about that kind of slightly tangy cheese."
+      }
+    ],
+    "stats": {
+      "sentences": 85,
+      "transcript_chars": 5247
+    }
+  },
+  "status": "ok",
+  "timings": {
+    "wall_seconds": 56.45,
+    "timeout_ms": 480000,
+    "input_chars": 5247,
+    "peak_working_set_bytes": 3796099072
+  },
+  "runtime": {
+    "engine": "llama.cpp",
+    "version": "b10330",
+    "executable": "C:\\Users\\Hyrican\\Desktop\\Кулинарная книга\\taste-and-trace-main\\electron\\llama.cpp\\llama-cli.exe"
+  },
+  "model": {
+    "repo": "Qwen/Qwen2.5-3B-Instruct-GGUF",
+    "file": "qwen2.5-3b-instruct-q4_k_m.gguf",
+    "quantization": "Q4_K_M",
+    "path": "C:\\Users\\Hyrican\\AppData\\Roaming\\taste-and-trace\\models\\recipe-parser\\qwen2.5-3b-instruct-q4_k_m.gguf",
+    "size_bytes": 2104932768
+  },
+  "e2e": {
+    "parser_wall_seconds": "56.47",
+    "transcript_chars": 5247,
+    "video_duration": 298,
+    "transcription_timings": {
+      "metadata_seconds": 1.7,
+      "download_seconds": 3.49,
+      "model_load_seconds": 2.51,
+      "transcription_seconds": 87.51,
+      "total_seconds": 95.21
+    }
+  }
+}

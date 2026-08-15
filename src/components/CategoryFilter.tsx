@@ -10,9 +10,23 @@ interface CategoryFilterProps {
   onCategoryChange: (category: string) => void;
 }
 
+const categoryLabelTranslations: Record<string, string> = {
+  "салаты": "default_salads",
+  "salads": "default_salads",
+};
+
 export function CategoryFilter({ selectedCategory, onCategoryChange }: CategoryFilterProps) {
   const { data: categories, isLoading } = useCategories();
   const { t } = useTranslation();
+
+  const getCategoryLabel = (category: { id: string; label: string }) => {
+    if (category.id.startsWith("default_")) {
+      return t(category.id);
+    }
+
+    const translationKey = categoryLabelTranslations[category.label.trim().toLowerCase()];
+    return translationKey ? t(translationKey) : category.label;
+  };
 
   if (isLoading) {
     return (
@@ -33,7 +47,7 @@ export function CategoryFilter({ selectedCategory, onCategoryChange }: CategoryF
         className="rounded-full whitespace-nowrap"
         onClick={() => onCategoryChange("all")}
       >
-        {t("all_recipes")}
+        {t("go_to_main")}
       </Button>
       {categories?.map((category) => (
         <Button
@@ -43,7 +57,7 @@ export function CategoryFilter({ selectedCategory, onCategoryChange }: CategoryF
           className="rounded-full whitespace-nowrap"
           onClick={() => onCategoryChange(category.id)}
         >
-          {category.label}
+          {getCategoryLabel(category)}
         </Button>
       ))}
     </div>

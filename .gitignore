@@ -6,3 +6,9 @@ dist_electron/
 *.log
 .env
 .env.local
+electron/llama.cpp/
+transcription-service/.venv/
+transcription-service/.venv313/
+transcription-service/build/
+transcription-service/dist/
+transcription-service/vendor/ffmpeg/

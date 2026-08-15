@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Wand2, Upload, FileText, Image, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,8 +30,25 @@ export function RecipeParserDialog({ onParsed }: RecipeParserDialogProps) {
   const [text, setText] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("photo");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { t } = useTranslation();
+
+  useEffect(() => {
+    const handleGlobalPaste = (e: ClipboardEvent) => {
+      if (!open) return;
+      const item = Array.from(e.clipboardData?.items || []).find((i) => i.type.startsWith("image/"));
+      if (item) {
+        const file = item.getAsFile();
+        if (file) {
+          handleImageSelect(file);
+          setActiveTab("photo");
+        }
+      }
+    };
+    window.addEventListener("paste", handleGlobalPaste);
+    return () => window.removeEventListener("paste", handleGlobalPaste);
+  }, [open]);
 
   const handleImageSelect = (file: File) => {
     setImageFile(file);
@@ -108,7 +125,7 @@ export function RecipeParserDialog({ onParsed }: RecipeParserDialogProps) {
       </DialogTrigger>
       <DialogContent className="max-w-lg">
         <DialogHeader><DialogTitle>{t("recognize_recipe_ai")}</DialogTitle></DialogHeader>
-        <Tabs defaultValue="photo">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full">
             <TabsTrigger value="photo" className="flex-1"><Image className="h-4 w-4 mr-2" />{t("photo")}</TabsTrigger>
             <TabsTrigger value="text" className="flex-1"><FileText className="h-4 w-4 mr-2" />{t("text")}</TabsTrigger>

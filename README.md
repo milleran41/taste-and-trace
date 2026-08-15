@@ -1,105 +1,68 @@
 # 🍽️ Taste & Trace — AI Cookbook
 
-AI-powered multilingual recipe management app.
+AI-powered multilingual recipe management app. **Fully offline, portable, and free.**
 
-## Download for Windows
+> 📦 **Looking for the ready-to-use app?**  
+> Scroll down to [📥 Download for Windows](#-download-for-windows) for portable `.exe` files — no installation required!
 
-[Download Taste & Trace for Windows x64](https://github.com/milleran41/taste-and-trace-download/releases/download/v0.0.0/Taste.Trace-Portable-0.0.0-x64.exe)
-
-Portable app: no installation required. Download the `.exe` file and run it.
-
-## System Requirements
-
-- Windows 10 or Windows 11
-- 64-bit Windows recommended
-- No administrator rights required
-- Windows 7, Windows 8, and Windows 8.1 are not supported
-
-## 📸 Screenshot
-
-![YumBook cookbook interface](public/screenshots/yumbook-cookbook.png)
+---
 
 ## ✨ Features
 
-- **AI Recipe Recognition** — Extract recipes from photos, screenshots, or pasted text
-- **URL Import** — Import recipes from YouTube, TikTok, Instagram, and cooking blogs
-- **AI Cooking Assistant** — Ask questions about recipes: substitutions, calories, healthier alternatives
-- **Interactive Guide** — Built-in AI guide that answers questions about the app
-- **Ingredient Substitution** — Find replacements for any ingredient
-- **Drag & Drop** — Reorder recipes within categories
-- **Kitchen Measures** — Reference table for common measurements and conversions
-- **Print** — Print-friendly recipe view
-- **15 Languages** — EN, DE, RU, ES, FR, IT, PT, PL, TR, UK, ZH, JA, KO, AR, HI
+- **🤖 AI Recipe Recognition** — Extract recipes from photos, screenshots, or pasted text
+- **🔗 URL Import** — Import recipes from YouTube, TikTok, Instagram, and cooking blogs (with auto-thumbnail)
+- **👨‍🍳 AI Cooking Assistant** — Ask questions about recipes: substitutions, calories, healthier alternatives
+- **📚 Interactive Guide** — Built-in AI guide that answers questions about the app
+- **🔄 Ingredient Substitution** — Find replacements for any ingredient
+- **🖱️ Drag & Drop** — Reorder recipes within categories
+- **⚖️ Kitchen Measures** — Reference table for common measurements and conversions
+- **🖨️ Print-Friendly View** — Clean, printer-optimized recipe layout
+- **🌍 15 Languages** — EN, DE, RU, ES, FR, IT, PT, PL, TR, UK, ZH, JA, KO, AR, HI
+- **💾 Fully Offline** — Works without internet after initial load (PWA support)
+- **🔒 Privacy-First** — No tracking, no ads, no data collection
 
-## 🚀 Installation
+---
+
+## 📥 Download for Windows
+
+### Portable Versions (No Installation Required)
+
+| Architecture | File Name | For Which Devices |
+|--------------|-----------|------------------|
+| **x64** (64-bit) | `Taste & Trace-Portable-0.0.0-x64.exe` | ✅ **Most users**: Modern PCs/laptops with Windows 10/11 (Intel/AMD) |
+| **ia32** (32-bit) | `Taste & Trace-Portable-0.0.0-ia32.exe` | Older PCs with 32-bit Windows (pre-2015) |
+| **arm64** | `Taste & Trace-Portable-0.0.0-arm64.exe` | Surface Pro X, laptops with Snapdragon processors |
+
+> 💡 **Not sure which one to download?**  
+> → Choose **`x64`** — it works on ~95% of Windows computers.
+
+### How to Use
+
+1.  Download the `.exe` file for your system.
+2.  (Optional) Move it to any folder or USB drive.
+3.  Double-click to run — **no installation, no admin rights required**.
+4.  Your recipes and settings are saved automatically.
+
+> ⚠️ **Antivirus notice:** Portable apps without a digital signature may trigger false positives. This is normal. The app is open-source and safe.
+
+### Where to Download
+
+-   🟢 **GitHub Releases**: [github.com/hyrican/taste-and-trace/releases](https://github.com/hyrican/taste-and-trace/releases) *(coming soon)*
+-   🟡 **Direct link**: *(will be added after first release)*
+
+---
+
+## 🚀 Installation (For Developers)
+
+If you want to run or modify the source code:
 
 ```bash
+# Clone the repository
+git clone https://github.com/hyrican/taste-and-trace.git
+cd taste-and-trace
+
+# Install dependencies
 npm install
+
+# Start development server
 npm run dev
-```
-
-The app runs at `http://localhost:5173`.
-
-## 🔑 Environment Variables
-
-Copy `.env.example` to `.env` and fill in values:
-
-```
-VITE_SUPABASE_URL=
-VITE_SUPABASE_PUBLISHABLE_KEY=
-VITE_SUPABASE_PROJECT_ID=
-```
-
-AI keys are managed as backend secrets through Lovable Cloud.
-
-## 🛠️ Technologies
-
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React 19, TypeScript, Vite |
-| Styling | Tailwind CSS, shadcn/ui |
-| State | TanStack React Query |
-| Backend | Lovable Cloud (Supabase) |
-| AI | Lovable AI Gateway (Gemini) |
-| i18n | i18next (15 languages) |
-| DnD | @dnd-kit |
-
-## 📁 Project Structure
-
-```
-src/
-├── assets/           # Static files (icons, images, flags)
-├── components/       # UI components
-│   ├── ui/           # shadcn/ui primitives
-│   ├── Header.tsx
-│   ├── RecipeCard.tsx
-│   ├── RecipeGrid.tsx
-│   ├── AssistantModal.tsx    # AI cooking assistant
-│   ├── GuideModal.tsx        # Interactive app guide
-│   ├── RecipeParserDialog.tsx # AI recipe recognition
-│   ├── URLImportModal.tsx    # Import from URL
-│   ├── RightSidebar.tsx      # Right panel
-│   └── SupportModal.tsx
-├── config/           # App, AI, language configuration
-├── hooks/            # Custom React hooks
-├── lib/              # Library utilities
-├── locales/          # Translation files (15 languages)
-├── pages/            # Route pages
-├── services/         # API & business-logic layer
-│   ├── aiService.ts
-│   ├── recipeService.ts
-│   ├── storageService.ts
-│   └── translationService.ts
-├── types/            # TypeScript types
-├── utils/            # Pure helper functions
-└── data/             # Static data (measures)
-
-supabase/
-├── functions/        # Edge functions (AI endpoints)
-├── migrations/       # Database migrations
-└── seed/             # Seed data
-```
-
-## 📄 License
-
-[MIT](LICENSE)

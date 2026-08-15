@@ -56,15 +56,15 @@ export function MeasuresModal({ open, onClose }: MeasuresModalProps) {
 
         <div className="flex flex-wrap gap-1.5 mb-4">
           {ingredientMeasures.map((ing) => (
-            <button key={ing.name} onClick={() => setSelectedIngredient(ing)} className={cn("px-2.5 py-1 rounded-full text-xs font-medium border transition-colors", selectedIngredient.name === ing.name ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-transparent hover:border-border")}>
-              {ing.name}
+            <button key={ing.id} onClick={() => setSelectedIngredient(ing)} className={cn("px-2.5 py-1 rounded-full text-xs font-medium border transition-colors", selectedIngredient.id === ing.id ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-transparent hover:border-border")}>
+              {t(ing.id)}
             </button>
           ))}
         </div>
 
         <div className="flex items-center gap-3 mb-4">
           <Input type="number" min="0" placeholder={t("grams")} value={grams} onChange={(e) => setGrams(e.target.value)} className="w-32" />
-          <span className="text-sm text-muted-foreground">g → {selectedIngredient.name}</span>
+          <span className="text-sm text-muted-foreground">g → {t(selectedIngredient.id)}</span>
         </div>
 
         <div className="grid grid-cols-2 gap-3 mb-5">
@@ -91,8 +91,8 @@ export function MeasuresModal({ open, onClose }: MeasuresModalProps) {
               </thead>
               <tbody>
                 {ingredientMeasures.map((ing) => (
-                  <tr key={ing.name} className="border-b border-border/50 last:border-0">
-                    <td className="py-1.5 pr-2 font-medium">{ing.name}</td>
+                  <tr key={ing.id} className="border-b border-border/50 last:border-0">
+                    <td className="py-1.5 pr-2 font-medium">{t(ing.id)}</td>
                     <td className="text-right py-1.5 px-1">{ing.tablespoon}g</td>
                     <td className="text-right py-1.5 px-1">{ing.teaspoon}g</td>
                     <td className="text-right py-1.5 px-1">{ing.glass}g</td>

@@ -53,3 +53,7 @@ i18n
 
 export default i18n;
 
+// Expose i18n to window so Electron main process can access translations for context menu
+if (typeof window !== 'undefined') {
+  (window as any).__i18n = i18n;
+}

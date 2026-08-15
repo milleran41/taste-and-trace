@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Settings, Plus, Pencil, Trash2, GripVertical } from "lucide-react";
+import { Settings, Plus, Pencil, Trash2, GripVertical, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,6 +17,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useTranslation } from "react-i18next";
+import { isDefaultCategory } from "@/utils/categoryConstants";
 
 export function CategoryManager() {
   const [open, setOpen] = useState(false);
@@ -39,6 +40,10 @@ export function CategoryManager() {
   };
 
   const handleDelete = async (id: string) => {
+    if (isDefaultCategory(id)) {
+      toast.error(t("cannot_delete_default_category"));
+      return;
+    }
     const { error } = await supabase.from("categories").delete().eq("id", id);
     if (error) { toast.error(t("error_deleting_category")); return; }
     queryClient.invalidateQueries({ queryKey: ["categories"] });
@@ -94,9 +99,9 @@ export function CategoryManager() {
             </form>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <SortableContext items={categories?.map((c) => c.id) ?? []} strategy={verticalListSortingStrategy}>
-                <div className="space-y-2 max-h-64 overflow-y-auto">
+                <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
                   {categories?.map((cat) => (
-                    <SortableCategoryItem key={cat.id} id={cat.id} label={cat.label} isEditing={editingId === cat.id} editLabel={editLabel} onEditLabelChange={setEditLabel} onStartEdit={() => startEdit(cat.id, cat.label)} onCancelEdit={() => setEditingId(null)} onSaveEdit={() => handleUpdate(cat.id)} onDelete={() => handleDelete(cat.id)} />
+                    <SortableCategoryItem key={cat.id} id={cat.id} label={cat.label} isEditing={editingId === cat.id} editLabel={editLabel} onEditLabelChange={setEditLabel} onStartEdit={() => startEdit(cat.id, cat.label)} onCancelEdit={() => setEditingId(null)} onSaveEdit={() => handleUpdate(cat.id)} onDelete={() => handleDelete(cat.id)} isDefault={isDefaultCategory(cat.id)} />
                   ))}
                 </div>
               </SortableContext>
@@ -112,9 +117,11 @@ interface SortableCategoryItemProps {
   id: string; label: string; isEditing: boolean; editLabel: string;
   onEditLabelChange: (v: string) => void; onStartEdit: () => void;
   onCancelEdit: () => void; onSaveEdit: () => void; onDelete: () => void;
+  isDefault: boolean;
 }
 
-function SortableCategoryItem({ id, label, isEditing, editLabel, onEditLabelChange, onStartEdit, onCancelEdit, onSaveEdit, onDelete }: SortableCategoryItemProps) {
+function SortableCategoryItem({ id, label, isEditing, editLabel, onEditLabelChange, onStartEdit, onCancelEdit, onSaveEdit, onDelete, isDefault }: SortableCategoryItemProps) {
+  const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
 
@@ -131,9 +138,13 @@ function SortableCategoryItem({ id, label, isEditing, editLabel, onEditLabelChan
         </form>
       ) : (
         <>
-          <span className="flex-1 text-sm">{label}</span>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onStartEdit}><Pencil className="h-3.5 w-3.5" /></Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={onDelete}><Trash2 className="h-3.5 w-3.5" /></Button>
+          <span className="flex-1 text-sm">{isDefault ? t(id) : label}</span>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onStartEdit} title={t("edit")}><Pencil className="h-3.5 w-3.5" /></Button>
+          {!isDefault ? (
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={onDelete} title={t("delete")}><Trash2 className="h-3.5 w-3.5" /></Button>
+          ) : (
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground cursor-not-allowed" disabled title={t("cannot_delete_default_category")}><Lock className="h-3.5 w-3.5" /></Button>
+          )}
         </>
       )}
     </div>

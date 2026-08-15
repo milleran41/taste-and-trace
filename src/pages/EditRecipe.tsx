@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,8 +10,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRecipe, useUpdateRecipe } from "@/hooks/useRecipes";
 import { useCategories } from "@/hooks/useCategories";
 import { useTranslation } from "react-i18next";
+import { fileToDataUrl } from "@/services/storageService";
+import { toast } from "sonner";
 
-const RecipeParserDialog = lazy(() => import("@/components/RecipeParserDialog").then(m => ({ default: m.RecipeParserDialog })));
+const isGeneratedPlaceholderImage = (value?: string | null) =>
+  typeof value === "string" && value.startsWith("data:image/svg+xml");
 
 export default function EditRecipe() {
   const { id } = useParams<{ id: string }>();
@@ -23,31 +26,12 @@ export default function EditRecipe() {
 
   const [formData, setFormData] = useState({ title: "", description: "", category: "", cooking_time: "", difficulty: "", servings: 4, ingredients: "", instructions: "", notes: "", tags: "", image: "" });
 
-  const handleParsed = (data: {
-    title: string; description: string; ingredients: string; instructions: string;
-    cooking_time: string; servings: number; difficulty: string; tags: string; notes: string; image?: string;
-  }) => {
-    setFormData((prev) => ({
-      ...prev,
-      title: data.title || prev.title,
-      description: data.description || prev.description,
-      ingredients: data.ingredients || prev.ingredients,
-      instructions: data.instructions || prev.instructions,
-      cooking_time: data.cooking_time || prev.cooking_time,
-      servings: data.servings || prev.servings,
-      difficulty: data.difficulty || prev.difficulty,
-      tags: data.tags || prev.tags,
-      notes: data.notes || prev.notes,
-      image: data.image || prev.image,
-    }));
-  };
-
   useEffect(() => {
     if (recipe) {
       const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients.join("\n") : "";
       const instructions = Array.isArray(recipe.instructions) ? recipe.instructions.join("\n") : "";
       const tags = Array.isArray(recipe.tags) ? recipe.tags.join(", ") : "";
-      setFormData({ title: recipe.title, description: recipe.description || "", category: recipe.category, cooking_time: recipe.cooking_time || "", difficulty: recipe.difficulty || "", servings: recipe.servings || 4, ingredients, instructions, notes: recipe.notes || "", tags, image: recipe.image || "" });
+      setFormData({ title: recipe.title, description: recipe.description || "", category: recipe.category, cooking_time: recipe.cooking_time || "", difficulty: recipe.difficulty || "", servings: recipe.servings || 4, ingredients, instructions, notes: recipe.notes || "", tags, image: isGeneratedPlaceholderImage(recipe.image) ? "" : recipe.image || "" });
     }
   }, [recipe]);
 
@@ -63,17 +47,39 @@ export default function EditRecipe() {
     <div className="min-h-screen bg-background">
       <div className="container py-8 max-w-2xl">
         <Button variant="ghost" asChild className="mb-6"><Link to={`/recipe/${id}`}><ArrowLeft className="h-4 w-4 mr-2" />{t("back")}</Link></Button>
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="font-display text-3xl font-bold">{t("edit_recipe")}</h1>
-          <Suspense fallback={null}>
-            <RecipeParserDialog onParsed={handleParsed} />
-          </Suspense>
-        </div>
+        <h1 className="font-display text-3xl font-bold mb-6">{t("edit_recipe")}</h1>
         <form onSubmit={handleSubmit} className="space-y-6">
           <Card><CardHeader><CardTitle>{t("basic_info")}</CardTitle></CardHeader><CardContent className="space-y-4">
             <div><Label>{t("title")} *</Label><Input value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} required /></div>
             <div><Label>{t("description")}</Label><Textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} /></div>
-            <div><Label>{t("image_url")}</Label><Input value={formData.image} onChange={(e) => setFormData({ ...formData, image: e.target.value })} /></div>
+            <div>
+              <Label>{t("screenshot")}</Label>
+              <Input 
+                value={formData.image} 
+                onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                placeholder={t("paste_image_link")}
+                onPaste={async (e) => {
+                  const items = e.clipboardData?.items;
+                  if (!items) return;
+                  for (let i = 0; i < items.length; i++) {
+                    if (items[i].type.indexOf("image") !== -1) {
+                      e.preventDefault();
+                      const file = items[i].getAsFile();
+                      if (file) {
+                        try {
+                          const base64 = await fileToDataUrl(file);
+                          setFormData((prev) => ({ ...prev, image: base64 }));
+                          toast.success("Изображение вставлено");
+                        } catch (err) {
+                          toast.error("Ошибка при вставке изображения");
+                        }
+                      }
+                      break;
+                    }
+                  }
+                }}
+              />
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div><Label>{t("category")} *</Label><Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{categories?.map((c) => (<SelectItem key={c.id} value={c.id}>{c.label}</SelectItem>))}</SelectContent></Select></div>
               <div><Label>{t("difficulty")}</Label><Select value={formData.difficulty} onValueChange={(v) => setFormData({ ...formData, difficulty: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="easy">{t("easy")}</SelectItem><SelectItem value="medium">{t("medium")}</SelectItem><SelectItem value="hard">{t("hard")}</SelectItem></SelectContent></Select></div>

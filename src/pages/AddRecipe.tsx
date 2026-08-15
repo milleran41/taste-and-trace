@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCreateRecipe } from "@/hooks/useRecipes";
 import { useCategories } from "@/hooks/useCategories";
 import { useTranslation } from "react-i18next";
+import { fileToDataUrl } from "@/services/storageService";
 
 const RecipeParserDialog = lazy(() => import("@/components/RecipeParserDialog").then(m => ({ default: m.RecipeParserDialog })));
 
@@ -93,7 +94,35 @@ export default function AddRecipe() {
             <CardContent className="space-y-4">
               <div><Label htmlFor="title">{t("title")} *</Label><Input id="title" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} required /></div>
               <div><Label htmlFor="description">{t("description")}</Label><Textarea id="description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} /></div>
-              <div><Label htmlFor="image">{t("image_url")}</Label><Input id="image" value={formData.image} onChange={(e) => setFormData({ ...formData, image: e.target.value })} /></div>
+              <div>
+                <Label htmlFor="image">{t("screenshot")}</Label>
+                <Input 
+                  id="image" 
+                  value={formData.image} 
+                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                  placeholder={t("paste_image_link")}
+                  onPaste={async (e) => {
+                    const items = e.clipboardData?.items;
+                    if (!items) return;
+                    for (let i = 0; i < items.length; i++) {
+                      if (items[i].type.indexOf("image") !== -1) {
+                        e.preventDefault();
+                        const file = items[i].getAsFile();
+                        if (file) {
+                          try {
+                            const base64 = await fileToDataUrl(file);
+                            setFormData((prev) => ({ ...prev, image: base64 }));
+                            toast.success("Изображение вставлено");
+                          } catch (err) {
+                            toast.error("Ошибка при вставке изображения");
+                          }
+                        }
+                        break;
+                      }
+                    }
+                  }}
+                />
+              </div>
               {pendingScreenshots.length > 0 && (
                 <div>
                   <Label>{t("screenshots_from_photo")} ({pendingScreenshots.length})</Label>

@@ -1,21 +1,25 @@
 import { memo } from "react";
-import { useDraggable } from "@dnd-kit/core";
-import { RecipeCard } from "./RecipeCard";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { PuzzleRecipeTile } from "./PuzzleRecipeTile";
 import { Recipe } from "@/types/recipe";
 import { GripVertical } from "lucide-react";
 
 interface SortableRecipeCardProps {
   recipe: Recipe;
+  index?: number;
   onPointerEnter?: (recipeId: string) => void;
 }
 
-function SortableRecipeCardComponent({ recipe, onPointerEnter }: SortableRecipeCardProps) {
+function SortableRecipeCardComponent({ recipe, index = 0, onPointerEnter }: SortableRecipeCardProps) {
   const {
     attributes,
     listeners,
     setNodeRef,
+    transform,
+    transition,
     isDragging,
-  } = useDraggable({ id: recipe.id });
+  } = useSortable({ id: recipe.id });
 
   return (
     <div
@@ -24,6 +28,8 @@ function SortableRecipeCardComponent({ recipe, onPointerEnter }: SortableRecipeC
       onPointerEnter={() => onPointerEnter?.(recipe.id)}
       style={{
         opacity: isDragging ? 0.35 : 1,
+        transform: CSS.Transform.toString(transform),
+        transition,
       }}
     >
       <div
@@ -33,7 +39,7 @@ function SortableRecipeCardComponent({ recipe, onPointerEnter }: SortableRecipeC
       >
         <GripVertical className="h-4 w-4 text-muted-foreground" />
       </div>
-      <RecipeCard recipe={recipe} />
+      <PuzzleRecipeTile recipe={recipe} index={index} className={isDragging ? "pointer-events-none" : undefined} />
     </div>
   );
 }

@@ -15,4 +15,6 @@ export interface RecipeFormData {
   notes: string;
   tags: string[];
   image: string;
+  screenshots?: string[];
+  source?: unknown;
 }

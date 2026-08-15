@@ -33,6 +33,7 @@ export function RecipeGrid({ recipes, isLoading }: RecipeGridProps) {
         <p className="text-sm text-muted-foreground mt-1">
           {t("try_different_search")}
         </p>
+
       </div>
     );
   }
