@@ -1401,6 +1401,86 @@ def transcribe_video(url: str, language: str | None = None) -> dict[str, Any]:
     }
 
 
+def get_local_media_duration(media_path: Path) -> float | None:
+    try:
+        import av
+
+        with av.open(str(media_path)) as container:
+            if container.duration:
+                return float(container.duration / av.time_base)
+            durations = [
+                float(stream.duration * stream.time_base)
+                for stream in container.streams
+                if stream.duration is not None and stream.time_base is not None
+            ]
+            return max(durations) if durations else None
+    except Exception:
+        return None
+
+
+def transcribe_file(file_path: str, language: str | None = None) -> dict[str, Any]:
+    started = time.perf_counter()
+
+    if not isinstance(file_path, str) or not file_path.strip():
+        raise TranscriptionError(400, "INVALID_FILE", "Video file path is required.")
+
+    media_path = Path(file_path).expanduser().resolve()
+    if not media_path.exists() or not media_path.is_file():
+        raise TranscriptionError(400, "INVALID_FILE", "Selected video file was not found.")
+
+    language_hint = normalize_language_hint(language)
+
+    metadata_started = time.perf_counter()
+    duration = get_local_media_duration(media_path)
+    metadata_seconds = time.perf_counter() - metadata_started
+
+    max_duration_seconds = settings.max_video_duration_minutes * 60
+    if duration and duration > max_duration_seconds:
+        raise TranscriptionError(
+            413,
+            "VIDEO_TOO_LONG",
+            f"Video is longer than the configured {settings.max_video_duration_minutes:g} minute limit.",
+        )
+
+    try:
+        text, detected_language, language_probability, transcription_seconds, model_load_seconds = transcribe_audio(
+            media_path,
+            language_hint,
+        )
+    except TranscriptionError:
+        raise
+    except Exception as exc:
+        raise TranscriptionError(500, "TRANSCRIPTION_FAILED", "Video transcription failed.") from exc
+
+    total_seconds = time.perf_counter() - started
+    timings = {
+        "metadata_seconds": round(metadata_seconds, 2),
+        "download_seconds": 0,
+        "model_load_seconds": round(model_load_seconds, 2),
+        "transcription_seconds": round(transcription_seconds, 2),
+        "total_seconds": round(total_seconds, 2),
+    }
+
+    return {
+        "success": True,
+        "text": text,
+        "language": detected_language,
+        "language_probability": language_probability,
+        "duration": duration,
+        "engine": ENGINE,
+        "model": settings.whisper_model,
+        "device": settings.whisper_device,
+        "compute_type": settings.whisper_compute_type,
+        "transcription_seconds": timings["transcription_seconds"],
+        "total_seconds": timings["total_seconds"],
+        "timings": timings,
+        "source": {
+            "type": "local_file",
+            "fileName": media_path.name,
+        },
+    }
+
+
 def transcribe_youtube(url: str, language: str | None = None) -> dict[str, Any]:
     return transcribe_video(url, language)
 

@@ -1,8 +1,40 @@
-const { app, BrowserWindow, ipcMain } = require("electron");
+const { app, BrowserWindow, ipcMain, dialog } = require("electron");
 const path = require("path");
 const { registerTranscriptionIpc } = require("./transcription.cjs");
 const { registerLocalRecipeParserIpc } = require("./local-recipe-parser.cjs");
 const { registerVideoRecipePipelineIpc } = require("./video-recipe-pipeline.cjs");
+
+const SELECT_VIDEO_FILE_CHANNEL = "tasteTrace:selectVideoFile";
+const VIDEO_FILE_FILTERS = [
+  {
+    name: "Video files",
+    extensions: ["mp4", "m4v", "mov", "mkv", "avi", "webm", "wmv", "flv", "mpeg", "mpg", "3gp"],
+  },
+  { name: "All files", extensions: ["*"] },
+];
+
+function registerFilePickerIpc() {
+  ipcMain.handle(SELECT_VIDEO_FILE_CHANNEL, async () => {
+    const result = await dialog.showOpenDialog({
+      title: "Select video",
+      properties: ["openFile"],
+      filters: VIDEO_FILE_FILTERS,
+    });
+
+    if (result.canceled || !result.filePaths.length) {
+      return { canceled: true };
+    }
+
+    const filePath = result.filePaths[0];
+    return {
+      canceled: false,
+      file: {
+        path: filePath,
+        name: path.basename(filePath),
+      },
+    };
+  });
+}
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -73,6 +105,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  registerFilePickerIpc();
   registerTranscriptionIpc(ipcMain, app);
   registerLocalRecipeParserIpc(ipcMain, app);
   registerVideoRecipePipelineIpc(ipcMain, app);

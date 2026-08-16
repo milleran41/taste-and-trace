@@ -1,5 +1,5 @@
 ﻿import { useState, useRef, useEffect } from "react";
-import { X, Link2, Loader2, Check, AlertTriangle } from "lucide-react";
+import { X, Link2, Loader2, Check, AlertTriangle, Clipboard, Upload, FileVideo } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,7 +32,14 @@ interface ParsedRecipe {
   title: string; description: string; ingredients: string[]; instructions: string[];
   cooking_time: string; servings: number | null; difficulty: string; tags: string[];
   notes: string; category_hint: string;
-  source?: { sourceType: string; sourceUrl: string; sourcePlatform: string; };
+  source?: {
+    sourceType: string;
+    sourceUrl?: string;
+    sourceFileName?: string;
+    sourcePlatform: string;
+    detectedLanguage?: string | null;
+    importedAt?: string;
+  };
   thumbnail?: string;
   localDraft?: boolean;
   quality?: LocalRecipeQuality;
@@ -179,6 +186,7 @@ function buildVideoRecipeText(data: VideoTextPayload): string {
 
 export function URLImportModal({ open, onClose }: URLImportModalProps) {
   const [url, setUrl] = useState("");
+  const [selectedVideoFile, setSelectedVideoFile] = useState<{ path: string; name: string } | null>(null);
   const [stage, setStage] = useState<Stage>("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [parsed, setParsed] = useState<ParsedRecipe | null>(null);
@@ -247,12 +255,18 @@ export function URLImportModal({ open, onClose }: URLImportModalProps) {
       MODEL_DOWNLOAD_FAILED: "transcription_error_model_download",
       MODEL_LOAD_FAILED: "transcription_error_model_load",
       DOWNLOAD_FAILED: "transcription_error_video_download",
+      DOWNLOAD_FORBIDDEN: "transcription_error_video_download",
       HELPER_TIMEOUT: "transcription_error_timeout",
       TRANSCRIPTION_FAILED: "transcription_error_failed",
     };
     const key = code ? keyByCode[code] : undefined;
     return key ? t(key) : (message || t("transcription_error_failed"));
   };
+
+  const getVideoUrlFallbackMessage = (message?: string): string =>
+    `${message || t("local_recipe_error_insufficient")} ${t("video_url_file_fallback", {
+      defaultValue: "Не удалось получить видео по этой ссылке. Сохраните видео на компьютер и загрузите файл напрямую.",
+    })}`;
 
   const getLocalParserErrorMessage = (code?: string, message?: string): string => {
     const keyByCode: Record<string, string> = {
@@ -291,6 +305,11 @@ export function URLImportModal({ open, onClose }: URLImportModalProps) {
     const videoId = getYouTubeVideoId(videoUrl);
     return videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : "";
   };
+
+  const isElectronVideoImportAvailable =
+    typeof window !== "undefined" &&
+    typeof window.tasteTrace?.importVideoRecipeLocal === "function" &&
+    typeof window.tasteTrace?.parseRecipeTextLocal === "function";
 
   const normalizeRecipeTitle = (value: string): string =>
     value.replace(/\s+/g, " ").trim().toLocaleLowerCase();
@@ -501,17 +520,98 @@ export function URLImportModal({ open, onClose }: URLImportModalProps) {
     }
   };
 
+  const handleChooseVideoFile = async () => {
+    if (typeof window.tasteTrace?.selectVideoFile !== "function") {
+      toast.error(t("video_file_import_unavailable", { defaultValue: "Выбор видеофайла доступен только в настольной версии приложения." }));
+      return;
+    }
+
+    const result = await window.tasteTrace.selectVideoFile();
+    if (result.canceled || !result.file) return;
+
+    setSelectedVideoFile(result.file);
+    setUrl("");
+    setStage("idle");
+    setErrorMsg("");
+    setParsed(null);
+    setSaveAsLinkMode(false);
+  };
+
+  const handlePasteFromClipboard = async () => {
+    try {
+      const text = (await navigator.clipboard.readText()).trim();
+      if (!text) return;
+      setUrl(text);
+      setSelectedVideoFile(null);
+      if (isVideoUrl(text)) {
+        toast.success(t("video_url_pasted", { defaultValue: "Ссылка вставлена." }));
+      }
+    } catch {
+      toast.error(t("clipboard_read_failed", { defaultValue: "Не удалось прочитать буфер обмена." }));
+    }
+  };
+
   const handleImport = async () => {
     const importUrl = normalizeSourceUrl(url);
-    if (!importUrl) return;
+    const selectedFile = selectedVideoFile;
+    if (!selectedFile && !importUrl) return;
     setStage("fetching"); setErrorMsg(""); setParsed(null);
     // РЎР±СЂР°СЃС‹РІР°РµРј СЂРµР¶РёРј СЃРѕС…СЂР°РЅРµРЅРёСЏ СЃСЃС‹Р»РєРё РїСЂРё РЅРѕРІРѕРј РёРјРїРѕСЂС‚Рµ
     setSaveAsLinkMode(false);
 
     const localVideoTextApiAvailable =
-      typeof window !== "undefined" &&
-      typeof window.tasteTrace?.importVideoRecipeLocal === "function" &&
-      typeof window.tasteTrace?.parseRecipeTextLocal === "function";
+      isElectronVideoImportAvailable;
+
+    if (selectedFile) {
+      if (!localVideoTextApiAvailable) {
+        setStage("error");
+        setErrorMsg(t("video_file_import_unavailable", { defaultValue: "Выбор видеофайла доступен только в настольной версии приложения." }));
+        return;
+      }
+
+      try {
+        setStage("transcribing");
+        const pipelineResult = await window.tasteTrace!.importVideoRecipeLocal({
+          type: "file",
+          path: selectedFile.path,
+          name: selectedFile.name,
+        });
+
+        if (pipelineResult.success && pipelineResult.recipe) {
+          setImportedRecipe(pipelineResult.recipe as ParsedRecipe);
+          return;
+        }
+
+        if (pipelineResult.error?.code === "RECIPE_MODEL_NOT_FOUND" && pipelineResult.details?.parserInput) {
+          const localParseResult = await parseLocalVideoRecipe(
+            pipelineResult.details.parserInput,
+            pipelineResult.details.evidence?.language,
+          );
+          const parsedRecipe: ParsedRecipe = {
+            ...localParseResult.recipe!,
+            servings: localParseResult.recipe!.servings,
+            source: {
+              sourceType: "local_file",
+              sourceFileName: selectedFile.name,
+              sourcePlatform: "local_file",
+              detectedLanguage: pipelineResult.details.evidence?.language || null,
+              importedAt: new Date().toISOString(),
+            },
+            localDraft: true,
+            quality: localParseResult.quality,
+          };
+          setImportedRecipe(parsedRecipe);
+          return;
+        }
+
+        setStage("error");
+        setErrorMsg(getLocalParserErrorMessage(pipelineResult.error?.code, pipelineResult.error?.message));
+      } catch (error) {
+        setStage("error");
+        setErrorMsg(error instanceof Error ? error.message : t("error"));
+      }
+      return;
+    }
 
     if (isVideoUrl(importUrl) && localVideoTextApiAvailable) {
       try {
@@ -571,6 +671,12 @@ export function URLImportModal({ open, onClose }: URLImportModalProps) {
           setErrorMsg(getLocalParserErrorMessage(pipelineResult.error.code, pipelineResult.error.message));
           return;
         }
+
+        if (pipelineResult.error?.code === "RECIPE_TEXT_INSUFFICIENT") {
+          setStage("error");
+          setErrorMsg(getVideoUrlFallbackMessage(pipelineResult.error.message));
+          return;
+        }
       } catch (videoTextError) {
         console.log("Local staged video recipe pipeline failed; falling back to cloud import:", {
           code: videoTextError instanceof ImportFlowError ? videoTextError.code : "unknown",
@@ -605,7 +711,7 @@ export function URLImportModal({ open, onClose }: URLImportModalProps) {
       });
 
       if (!canFallback || !electronApiAvailable) {
-        setStage("error"); setErrorMsg(importError.message);
+        setStage("error"); setErrorMsg(isVideoUrl(importUrl) ? getVideoUrlFallbackMessage(importError.message) : importError.message);
         return;
       }
 
@@ -694,7 +800,13 @@ export function URLImportModal({ open, onClose }: URLImportModalProps) {
           finalNotes = finalNotes ? finalNotes.trimEnd() + "\n" + urlLine : urlLine.trim();
         }
       }
-      const recipeImage = await resolveRecipeImage(sourceData?.sourceUrl, parsed?.thumbnail);
+      if (sourceData?.sourceFileName) {
+        const fileLine = `\n${t("source")}: ${sourceData.sourceFileName}`;
+        if (!finalNotes.includes(sourceData.sourceFileName)) {
+          finalNotes = finalNotes ? finalNotes.trimEnd() + "\n" + fileLine : fileLine.trim();
+        }
+      }
+      const recipeImage = sourceData?.sourceUrl ? await resolveRecipeImage(sourceData.sourceUrl, parsed?.thumbnail) : (parsed?.thumbnail || "");
       await createRecipe.mutateAsync({
         title: data.title, description: data.description,
         ingredients: data.ingredients.split("\n").filter(Boolean),
@@ -712,8 +824,54 @@ export function URLImportModal({ open, onClose }: URLImportModalProps) {
     finally { setIsSavingRecipe(false); }
   };
 
+  const handleOpenInEditor = () => {
+    if (!parsed) return;
+    const data = editMode ? editData : {
+      title: parsed.title,
+      description: parsed.description,
+      ingredients: (parsed.ingredients || []).join("\n"),
+      instructions: (parsed.instructions || []).join("\n"),
+      cooking_time: parsed.cooking_time,
+      servings: parsed.servings || 4,
+      difficulty: parsed.difficulty,
+      tags: (parsed.tags || []).join(", "),
+      notes: parsed.notes,
+      category: editData.category,
+    };
+
+    const sourceData = parsed.source;
+    let finalNotes = data.notes || "";
+    if (sourceData?.sourceUrl && !finalNotes.includes(sourceData.sourceUrl)) {
+      finalNotes = finalNotes ? `${finalNotes.trimEnd()}\n${t("source")}: ${sourceData.sourceUrl}` : `${t("source")}: ${sourceData.sourceUrl}`;
+    }
+    if (sourceData?.sourceFileName && !finalNotes.includes(sourceData.sourceFileName)) {
+      finalNotes = finalNotes ? `${finalNotes.trimEnd()}\n${t("source")}: ${sourceData.sourceFileName}` : `${t("source")}: ${sourceData.sourceFileName}`;
+    }
+
+    onClose();
+    navigate("/add", {
+      state: {
+        importedRecipeDraft: {
+          title: data.title,
+          description: data.description,
+          ingredients: data.ingredients.split("\n").filter(Boolean),
+          instructions: data.instructions.split("\n").filter(Boolean),
+          cooking_time: data.cooking_time,
+          servings: data.servings,
+          difficulty: data.difficulty,
+          tags: data.tags.split(",").map((tag) => tag.trim()).filter(Boolean),
+          notes: finalNotes,
+          category: data.category,
+          image: parsed.thumbnail || "",
+          source: sourceData || null,
+        },
+      },
+    });
+  };
+
   const reset = () => { 
     setUrl(""); 
+    setSelectedVideoFile(null);
     setStage("idle"); 
     setParsed(null); 
     setEditMode(false); 
@@ -739,11 +897,53 @@ export function URLImportModal({ open, onClose }: URLImportModalProps) {
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {stage === "idle" || stage === "error" ? (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">{t("paste_link")}</p>
-              <div className="flex gap-2">
-                <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://..." className="flex-1" />
-                <Button onClick={handleImport} disabled={!url.trim()}>{t("process")}</Button>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>{t("video_recipe_import", { defaultValue: "Импорт рецепта из видео" })}</Label>
+                <div className="flex items-center gap-2">
+                  <Button type="button" variant="outline" onClick={handleChooseVideoFile} className="shrink-0">
+                    <Upload className="h-4 w-4 mr-2" />
+                    {t("choose_video_file", { defaultValue: "Выбрать видео" })}
+                  </Button>
+                  {selectedVideoFile && (
+                    <div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
+                      <FileVideo className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{selectedVideoFile.name}</span>
+                      <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelectedVideoFile(null)}>
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="video-url">{t("video_url", { defaultValue: "URL видео" })}</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="video-url"
+                    value={url}
+                    onChange={(e) => {
+                      setUrl(e.target.value);
+                      if (e.target.value.trim()) setSelectedVideoFile(null);
+                    }}
+                    placeholder="https://..."
+                    className="flex-1"
+                  />
+                  <Button type="button" variant="outline" onClick={handlePasteFromClipboard}>
+                    <Clipboard className="h-4 w-4 mr-2" />
+                    {t("paste", { defaultValue: "Вставить" })}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {t("video_import_hint", { defaultValue: "Если ссылку получить невозможно, сохраните видео на компьютер и загрузите файл напрямую." })}
+                </p>
+              </div>
+
+              <div className="flex justify-end">
+                <Button onClick={handleImport} disabled={!selectedVideoFile && !url.trim()}>
+                  {t("recognize_recipe", { defaultValue: "Распознать рецепт" })}
+                </Button>
               </div>
               {stage === "error" && (
                 <div className="space-y-3">
@@ -866,12 +1066,17 @@ export function URLImportModal({ open, onClose }: URLImportModalProps) {
                     {parsed.instructions?.length > 0 && <div><h4 className="font-medium mb-1.5 text-sm">{t("cooking")}</h4><ol className="text-sm space-y-1.5">{parsed.instructions.map((step, i) => <li key={i} className="flex gap-2"><span className="text-primary font-medium">{i + 1}.</span>{step}</li>)}</ol></div>}
                     {parsed.tags?.length > 0 && <div className="flex flex-wrap gap-1.5">{parsed.tags.map((tag, i) => <Badge key={i} variant="secondary" className="text-xs">{tag}</Badge>)}</div>}
                     {parsed.notes && <p className="text-xs text-muted-foreground italic">{parsed.notes}</p>}
-                    {parsed.source?.sourceUrl && (
+                    {parsed.source && (
                       <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2 border-t">
                         <Link2 className="h-3.5 w-3.5" /><span>{t("source")}:</span>
-                        <a href={parsed.source.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline truncate max-w-[300px]">
-                          {parsed.source.sourcePlatform === "youtube" ? "YouTube" : parsed.source.sourcePlatform === "tiktok" ? "TikTok" : new URL(parsed.source.sourceUrl).hostname}
-                        </a>
+                        {parsed.source.sourceUrl ? (
+                          <a href={parsed.source.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline truncate max-w-[300px]">
+                            {parsed.source.sourcePlatform === "youtube" ? "YouTube" : parsed.source.sourcePlatform === "tiktok" ? "TikTok" : new URL(parsed.source.sourceUrl).hostname}
+                          </a>
+                        ) : (
+                          <span className="truncate max-w-[300px]">{parsed.source.sourceFileName || t("local_video_file", { defaultValue: "Локальный видеофайл" })}</span>
+                        )}
+                        {parsed.source.detectedLanguage && <Badge variant="outline" className="text-[10px]">{parsed.source.detectedLanguage}</Badge>}
                       </div>
                     )}
                   </CardContent>
@@ -909,6 +1114,7 @@ export function URLImportModal({ open, onClose }: URLImportModalProps) {
             <>
               <Button variant="outline" onClick={reset} disabled={isSavingRecipe || createRecipe.isPending}>{t("cancel")}</Button>
               <Button variant="outline" onClick={() => setEditMode(!editMode)} disabled={isSavingRecipe || createRecipe.isPending}>{editMode ? t("preview") : t("edit")}</Button>
+              <Button variant="outline" onClick={handleOpenInEditor} disabled={isSavingRecipe || createRecipe.isPending}>{t("open_editor", { defaultValue: "Открыть редактор" })}</Button>
               <Button onClick={handleSave} disabled={isSavingRecipe || createRecipe.isPending}>{(isSavingRecipe || createRecipe.isPending) ? t("saving") : t("save")}</Button>
             </>
           )}

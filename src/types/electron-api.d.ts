@@ -3,9 +3,26 @@ export {};
 export type TasteTraceTranscribeRequest =
   | string
   | {
+      type?: "url";
       url: string;
       language?: string;
+    }
+  | {
+      type: "file";
+      path: string;
+      name?: string;
+      language?: string;
     };
+
+export interface TasteTraceSelectedVideoFile {
+  path: string;
+  name: string;
+}
+
+export interface TasteTraceSelectVideoFileResult {
+  canceled: boolean;
+  file?: TasteTraceSelectedVideoFile;
+}
 
 export interface TasteTraceTranscriptionError {
   code: string;
@@ -259,7 +276,14 @@ export interface TasteTraceVideoRecipeEvidence {
 export interface TasteTraceImportVideoRecipeLocalResult {
   success: boolean;
   recipe?: TasteTraceLocalParsedRecipe & {
-    source?: { sourceType: string; sourceUrl: string; sourcePlatform: string };
+    source?: {
+      sourceType: string;
+      sourceUrl?: string;
+      sourceFileName?: string;
+      sourcePlatform: string;
+      detectedLanguage?: string | null;
+      importedAt?: string;
+    };
     localDraft?: boolean;
     quality?: TasteTraceRecipeQuality;
     evidenceDiagnostics?: TasteTraceVideoRecipeEvidence["diagnostics"];
@@ -276,6 +300,7 @@ export interface TasteTraceImportVideoRecipeLocalResult {
 declare global {
   interface Window {
     tasteTrace?: {
+      selectVideoFile(): Promise<TasteTraceSelectVideoFileResult>;
       importVideoRecipeLocal(request: TasteTraceTranscribeRequest): Promise<TasteTraceImportVideoRecipeLocalResult>;
       extractVideoText(request: TasteTraceTranscribeRequest): Promise<TasteTraceVideoTextResult>;
       extractVideoThumbnail(request: TasteTraceTranscribeRequest): Promise<TasteTraceVideoThumbnailResult>;

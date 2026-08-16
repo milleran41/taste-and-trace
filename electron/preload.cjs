@@ -9,8 +9,12 @@ const IMPORT_VIDEO_RECIPE_LOCAL_CHANNEL = "tasteTrace:importVideoRecipeLocal";
 const PARSE_RECIPE_TEXT_LOCAL_CHANNEL = "tasteTrace:parseRecipeTextLocal";
 const PREPARE_RECIPE_MODEL_CHANNEL = "tasteTrace:prepareRecipeParserModel";
 const TRANSLATE_RECIPE_LOCAL_CHANNEL = "tasteTrace:translateRecipeLocal";
+const SELECT_VIDEO_FILE_CHANNEL = "tasteTrace:selectVideoFile";
 
 contextBridge.exposeInMainWorld("tasteTrace", {
+  selectVideoFile() {
+    return ipcRenderer.invoke(SELECT_VIDEO_FILE_CHANNEL);
+  },
   importVideoRecipeLocal(request) {
     return ipcRenderer.invoke(IMPORT_VIDEO_RECIPE_LOCAL_CHANNEL, request);
   },

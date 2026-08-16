@@ -9,6 +9,7 @@ from transcriber import (
     extract_video_text,
     extract_video_thumbnail,
     health_payload,
+    transcribe_file,
     transcribe_video,
     transcribe_youtube,
 )
@@ -49,6 +50,8 @@ def main() -> int:
             )
         elif mode == "extract-video-thumbnail":
             result = extract_video_thumbnail(payload.get("url"))
+        elif mode == "transcribe-file":
+            result = transcribe_file(payload.get("path"), payload.get("language"))
         elif mode == "transcribe-video":
             result = transcribe_video(payload.get("url"), payload.get("language"))
         else:

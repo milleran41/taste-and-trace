@@ -1,5 +1,5 @@
 import { useState, useRef, lazy, Suspense } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -17,22 +17,25 @@ const RecipeParserDialog = lazy(() => import("@/components/RecipeParserDialog").
 
 export default function AddRecipe() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const importedDraft = (location.state as any)?.importedRecipeDraft;
   const createRecipe = useCreateRecipe();
   const { data: categories } = useCategories();
   const { t } = useTranslation();
 
   const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    category: "",
-    cooking_time: "",
-    difficulty: "",
-    servings: 4,
-    ingredients: "",
-    instructions: "",
-    notes: "",
-    tags: "",
-    image: "",
+    title: importedDraft?.title || "",
+    description: importedDraft?.description || "",
+    category: importedDraft?.category || "",
+    cooking_time: importedDraft?.cooking_time || "",
+    difficulty: importedDraft?.difficulty || "",
+    servings: importedDraft?.servings || 4,
+    ingredients: Array.isArray(importedDraft?.ingredients) ? importedDraft.ingredients.join("\n") : "",
+    instructions: Array.isArray(importedDraft?.instructions) ? importedDraft.instructions.join("\n") : "",
+    notes: importedDraft?.notes || "",
+    tags: Array.isArray(importedDraft?.tags) ? importedDraft.tags.join(", ") : "",
+    image: importedDraft?.image || "",
+    source: importedDraft?.source || null,
   });
 
   const [pendingScreenshots, setPendingScreenshots] = useState<string[]>([]);
@@ -72,6 +75,7 @@ export default function AddRecipe() {
       instructions: formData.instructions.split("\n").filter(Boolean),
       tags: formData.tags.split(",").map((t) => t.trim()).filter(Boolean),
       screenshots: pendingScreenshots.length > 0 ? pendingScreenshots : [],
+      source: formData.source || null,
     } as any);
     navigate("/");
   };

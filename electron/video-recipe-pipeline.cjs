@@ -34,9 +34,18 @@ function decodeHtmlEntities(value) {
 }
 
 function normalizeRequest(payload) {
-  if (typeof payload === "string") return { url: payload, language: undefined };
+  if (typeof payload === "string") return { type: "url", url: payload, language: undefined };
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) return null;
+  if (payload.type === "file" || payload.path || payload.filePath) {
+    return {
+      type: "file",
+      path: payload.path || payload.filePath,
+      name: typeof payload.name === "string" ? payload.name : undefined,
+      language: typeof payload.language === "string" ? payload.language : undefined,
+    };
+  }
   return {
+    type: "url",
     url: payload.url,
     language: typeof payload.language === "string" ? payload.language : undefined,
   };
@@ -55,6 +64,15 @@ function normalizePlatform(url, platform) {
     if (host.endsWith("instagram.com")) return "instagram";
     if (host.endsWith("tiktok.com")) return "tiktok";
     return host.split(".")[0] || "video";
+  } catch {
+    return "video";
+  }
+}
+
+function normalizeLocalFileName(filePath, name) {
+  if (typeof name === "string" && name.trim()) return name.trim();
+  try {
+    return require("path").basename(String(filePath || ""));
   } catch {
     return "video";
   }
@@ -705,6 +723,23 @@ function buildParsedRecipe(recipeResult, evidence, originalUrl) {
   };
 }
 
+function buildParsedFileRecipe(recipeResult, evidence, fileInput) {
+  return {
+    ...recipeResult.recipe,
+    thumbnail: recipeResult.recipe?.thumbnail || "",
+    source: {
+      sourceType: "local_file",
+      sourceFileName: fileInput.name,
+      sourcePlatform: "local_file",
+      detectedLanguage: evidence.language || null,
+      importedAt: new Date().toISOString(),
+    },
+    localDraft: true,
+    quality: recipeResult.quality,
+    evidenceDiagnostics: evidence.diagnostics,
+  };
+}
+
 function buildExplicitDescriptionResult(recipe, evidence, originalUrl) {
   return {
     success: true,
@@ -772,9 +807,86 @@ async function tryParseEvidence(app, evidence, originalUrl) {
   };
 }
 
+async function importLocalVideoFileRecipe(app, request) {
+  const fileName = normalizeLocalFileName(request.path, request.name);
+  const evidence = {
+    title: fileName.replace(/\.[^.]+$/u, ""),
+    platform: "local_file",
+    language: null,
+    thumbnail: "",
+    sources: [],
+    diagnostics: {
+      stagesRun: [],
+      stagesSkipped: ["platform_page_text", "platform_video_text", "video_ocr"],
+      assessments: [],
+      warnings: [],
+      linkedVideoUrl: null,
+    },
+  };
+
+  evidence.diagnostics.stagesRun.push("audio_transcription");
+  const transcript = await runTranscription(app, {
+    type: "file",
+    path: request.path,
+    name: fileName,
+    language: request.language,
+  });
+
+  if (!transcript?.success) {
+    return errorResult(
+      transcript?.error?.code || "AUDIO_TRANSCRIPTION_FAILED",
+      transcript?.error?.message || "Audio transcription failed.",
+      { evidence },
+    );
+  }
+
+  evidence.language = transcript.language || evidence.language;
+  addSource(evidence, "speech", transcript.text, {
+    source: "faster_whisper",
+    fileName,
+    duration: transcript.duration || null,
+  });
+
+  const assessment = assessEvidence(evidence);
+  const coverage = analyzeRecipeCoverage(evidence);
+  evidence.diagnostics.assessments.push({ stage: "local_file_audio", ...assessment, coverage });
+  if (coverage.notCookingRecipe || isNotCookingRecipeAssessment(assessment)) {
+    return errorResult("NOT_A_COOKING_RECIPE", "В этом видео не удалось обнаружить полноценный рецепт.", { evidence });
+  }
+  if (!coverage.sufficient) {
+    return errorResult("RECIPE_TEXT_INSUFFICIENT", "В этом видео не удалось обнаружить полноценный рецепт.", { evidence });
+  }
+
+  const parsed = await tryParseEvidence(app, evidence, "");
+  if (parsed.success) {
+    return {
+      success: true,
+      recipe: buildParsedFileRecipe(parsed.parser || parsed, evidence, { name: fileName }),
+      evidence,
+      stage: "audio_transcription",
+    };
+  }
+
+  return errorResult(parsed.parsed?.error?.code || "RECIPE_PARSE_FAILED", parsed.parsed?.error?.message || "Local recipe parsing failed.", {
+    evidence,
+    parserInput: parsed.parserInput,
+  });
+}
+
 async function importVideoRecipeLocal(app, payload) {
   const request = normalizeRequest(payload);
-  if (!request || typeof request.url !== "string" || !request.url.trim()) {
+  if (!request) {
+    return errorResult("INVALID_INPUT", "Video input must be a URL or selected file.");
+  }
+
+  if (request.type === "file") {
+    if (typeof request.path !== "string" || !request.path.trim()) {
+      return errorResult("INVALID_FILE", "Selected video file was not found.");
+    }
+    return importLocalVideoFileRecipe(app, request);
+  }
+
+  if (typeof request.url !== "string" || !request.url.trim()) {
     return errorResult("INVALID_URL", "URL must be a non-empty string.");
   }
 

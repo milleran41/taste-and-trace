@@ -43,9 +43,25 @@ function normalizeRequest(payload) {
   }
 
   return {
+    type: payload.type,
     url: payload.url,
+    path: payload.path || payload.filePath,
+    name: payload.name,
     language: typeof payload.language === "string" ? payload.language : undefined,
   };
+}
+
+function validateLocalMediaPath(filePath) {
+  if (typeof filePath !== "string" || !filePath.trim()) {
+    return false;
+  }
+
+  try {
+    const resolved = path.resolve(filePath);
+    return fs.existsSync(resolved) && fs.statSync(resolved).isFile();
+  } catch {
+    return false;
+  }
 }
 
 function normalizeLanguage(language) {
@@ -456,7 +472,23 @@ function runHelper(app, payload) {
 
 function runTranscription(app, payload) {
   const request = normalizeRequest(payload);
-  if (!request || !validateVideoUrl(request.url)) {
+  if (!request) {
+    return Promise.resolve(errorResult("INVALID_INPUT", "Video input is required."));
+  }
+
+  if (request.type === "file" || request.path) {
+    if (!validateLocalMediaPath(request.path)) {
+      return Promise.resolve(errorResult("INVALID_FILE", "Selected video file was not found."));
+    }
+    return runHelper(app, {
+      mode: "transcribe-file",
+      path: path.resolve(request.path),
+      name: request.name || path.basename(request.path),
+      language: request.language,
+    });
+  }
+
+  if (!validateVideoUrl(request.url)) {
     return Promise.resolve(errorResult("INVALID_URL", "Only direct http(s) video URLs are accepted."));
   }
 
