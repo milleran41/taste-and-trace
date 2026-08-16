@@ -494,6 +494,14 @@ function validateRecipeAgainstTitle(recipe, evidence) {
   };
 }
 
+function isStructuredDraftResult(result) {
+  return (
+    result?.status === "structured_draft" ||
+    result?.runtime?.engine === "structured-text" ||
+    (result?.quality?.warnings || []).some((warning) => warning?.code === "STRUCTURED_DRAFT")
+  );
+}
+
 function hasRichRecipeDescription(text) {
   const cleaned = cleanText(text);
   if (!cleaned) return false;
@@ -789,6 +797,29 @@ async function tryParseEvidence(app, evidence, originalUrl) {
   }
   const titleValidation = validateRecipeAgainstTitle(parsed.recipe, evidence);
   if (!titleValidation.ok) {
+    if (isStructuredDraftResult(parsed)) {
+      const llmParsed = await parseRecipeTextLocal(app, {
+        text: parserInput,
+        sourceLanguage: evidence.language || undefined,
+        allowStructuredDraft: false,
+      });
+      if (!llmParsed.success || !llmParsed.recipe) {
+        return {
+          success: false,
+          parsed: llmParsed,
+          parserInput,
+        };
+      }
+      const llmTitleValidation = validateRecipeAgainstTitle(llmParsed.recipe, evidence);
+      if (llmTitleValidation.ok) {
+        return {
+          success: true,
+          recipe: buildParsedRecipe(llmParsed, evidence, originalUrl),
+          parser: llmParsed,
+          parserInput,
+        };
+      }
+    }
     return {
       success: false,
       parsed: errorResult(

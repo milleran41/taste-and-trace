@@ -1793,6 +1793,7 @@ function getProcessPeakWorkingSet(pid) {
 async function parseRecipeTextLocal(app, request) {
   const text = typeof request === "string" ? request : request?.text;
   const sourceLanguage = typeof request?.sourceLanguage === "string" ? request.sourceLanguage : undefined;
+  const allowStructuredDraft = request?.allowStructuredDraft !== false;
 
   if (typeof text !== "string" || !text.trim()) {
     return errorResult("INVALID_TEXT", "text must be a non-empty string.");
@@ -1802,7 +1803,7 @@ async function parseRecipeTextLocal(app, request) {
   }
 
   const evidence = extractTranscriptEvidence(text.trim());
-  const structuredDraft = parseStructuredRecipeDraft(text.trim());
+  const structuredDraft = allowStructuredDraft ? parseStructuredRecipeDraft(text.trim()) : null;
   if (structuredDraft) {
     const quality = buildQualityReport(structuredDraft, text.trim(), evidence);
     return okResult(structuredDraft, {

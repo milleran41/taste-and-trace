@@ -327,7 +327,7 @@ declare global {
       transcribeVideo(request: TasteTraceTranscribeRequest): Promise<TasteTraceTranscriptionResult>;
       transcribeYouTube(request: TasteTraceTranscribeRequest): Promise<TasteTraceTranscriptionResult>;
       getTranscriptionHealth(): Promise<TasteTraceTranscriptionHealthResult>;
-      parseRecipeTextLocal(request: { text: string; sourceLanguage?: string }): Promise<TasteTraceLocalRecipeParserResult>;
+      parseRecipeTextLocal(request: { text: string; sourceLanguage?: string; allowStructuredDraft?: boolean }): Promise<TasteTraceLocalRecipeParserResult>;
       translateRecipeLocal(request: { recipe: unknown; targetLanguage: string }): Promise<TasteTraceTranslateRecipeLocalResult>;
       prepareRecipeParserModel(): Promise<TasteTracePrepareRecipeParserModelResult>;
     };
