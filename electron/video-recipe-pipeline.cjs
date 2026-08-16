@@ -551,12 +551,13 @@ function isIngredientListLine(line) {
   if (isRecipeSectionHeading(cleaned)) return true;
   return (
     /^(?:[-*•▪✔]\s*)?.{1,90}\d+(?:[.,]\d+)?\s*(?:g|gr|kg|mg|ml|l|oz|lb|lbs|tbsp|tsp|cups?|cup|pcs?|шт|г|гр|кг|мл|л|ст\.?\s*л|ч\.?\s*л)(?=$|[\s.,;:)])/iu.test(cleaned) ||
-    /^(?:[-*•▪]\s*)?(?:one|two|three|four|five|six|seven|eight|nine|ten|salt|pepper|oil|paprika|water|egg|eggs)\b/iu.test(cleaned)
+    /^(?:[-*•▪]\s*)?(?:one|two|three|four|five|six|seven|eight|nine|ten|salt|pepper|oil|paprika|water|egg|eggs)\b/iu.test(cleaned) ||
+    /^(?:соль|перец|зелень|укроп|петрушка|лавровый\s+лист|масло|вода)(?![\p{L}\p{N}]).*(?:по\s+вкусу|по\s+желанию)?/iu.test(cleaned)
   );
 }
 
 function cleanListMarker(line) {
-  return cleanText(line).replace(/^(?:[-*•▪✔]\s*)/, "").trim();
+  return cleanText(line).replace(/^[\u200b-\u200f\u2060\ufeff\s]*(?:[-*•▪✔]\s*)?[\u200b-\u200f\u2060\ufeff\s]*/, "").trim();
 }
 
 function splitNumberedInstructions(text) {
@@ -584,7 +585,7 @@ function splitSpeechInstructions(text) {
     .split(/(?<=[.!?…])\s+|(?:\s+и\s+буду\s+)|(?:\s+затем\s+)|(?:\s+потом\s+)/iu)
     .map((line) => cleanText(line))
     .filter((line) => line.length >= 12)
-    .filter((line) => /(?:вар|нарез|добав|смеш|расклад|жар|туш|запек|cook|boil|cut|add|mix|fry|bake)/iu.test(line));
+    .filter((line) => /(?:вар|нарез|добав|смеш|расклад|жар|туш|запек|обжар|перемеш|готов|кипят|нашинк|cook|boil|cut|add|mix|fry|bake)/iu.test(line));
   return parts.length >= 2 ? parts : [cleaned].filter((line) => line.length >= 20);
 }
 
@@ -602,11 +603,11 @@ function extractIngredientLinesFromSources(sources) {
 
 function tryBuildIngredientSpeechRecipe(evidence) {
   const ingredientSources = evidence.sources.filter((source) => ["platform_page", "description"].includes(source.kind));
-  const speechSources = getSourcesByKind(evidence, "speech").filter((source) => source.text);
-  if (!ingredientSources.length || !speechSources.length) return null;
+  const instructionSources = evidence.sources.filter((source) => ["speech", "captions"].includes(source.kind) && source.text);
+  if (!ingredientSources.length || !instructionSources.length) return null;
 
   const ingredients = extractIngredientLinesFromSources(ingredientSources);
-  const instructions = speechSources.flatMap((source) => splitSpeechInstructions(source.text)).slice(0, 40);
+  const instructions = instructionSources.flatMap((source) => splitSpeechInstructions(source.text)).slice(0, 40);
   if (ingredients.length < 3 || instructions.length < 2) return null;
 
   const title = cleanText(evidence.title) || "Video recipe";
@@ -619,7 +620,7 @@ function tryBuildIngredientSpeechRecipe(evidence) {
     servings: parseServingsFromText(ingredientSources.map((source) => source.text).join("\n")),
     difficulty: "medium",
     tags: ["video", "draft"],
-    notes: "Draft assembled from visible source ingredients and speech transcription. Please review before final saving.",
+    notes: "Draft assembled from visible source ingredients and video transcript. Please review before final saving.",
     category_hint: "",
   };
 }
