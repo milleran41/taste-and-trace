@@ -297,11 +297,31 @@ export interface TasteTraceImportVideoRecipeLocalResult {
   error?: TasteTraceTranscriptionError;
 }
 
+export interface TasteTraceImportArticleRecipeLocalResult {
+  success: boolean;
+  recipe?: TasteTraceLocalParsedRecipe & {
+    source?: {
+      sourceType: string;
+      sourceUrl?: string;
+      sourcePlatform: string;
+    };
+    thumbnail?: string;
+    localDraft?: boolean;
+    quality?: TasteTraceRecipeQuality;
+  };
+  stage?: "json_ld" | "local_parser" | string;
+  details?: {
+    parserInput?: string;
+  };
+  error?: TasteTraceTranscriptionError;
+}
+
 declare global {
   interface Window {
     tasteTrace?: {
       selectVideoFile(): Promise<TasteTraceSelectVideoFileResult>;
       importVideoRecipeLocal(request: TasteTraceTranscribeRequest): Promise<TasteTraceImportVideoRecipeLocalResult>;
+      importArticleRecipeLocal(request: { url: string }): Promise<TasteTraceImportArticleRecipeLocalResult>;
       extractVideoText(request: TasteTraceTranscribeRequest): Promise<TasteTraceVideoTextResult>;
       extractVideoThumbnail(request: TasteTraceTranscribeRequest): Promise<TasteTraceVideoThumbnailResult>;
       transcribeVideo(request: TasteTraceTranscribeRequest): Promise<TasteTraceTranscriptionResult>;

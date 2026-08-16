@@ -311,6 +311,10 @@ export function URLImportModal({ open, onClose }: URLImportModalProps) {
     typeof window.tasteTrace?.importVideoRecipeLocal === "function" &&
     typeof window.tasteTrace?.parseRecipeTextLocal === "function";
 
+  const isElectronArticleImportAvailable =
+    typeof window !== "undefined" &&
+    typeof window.tasteTrace?.importArticleRecipeLocal === "function";
+
   const normalizeRecipeTitle = (value: string): string =>
     value.replace(/\s+/g, " ").trim().toLocaleLowerCase();
 
@@ -684,6 +688,30 @@ export function URLImportModal({ open, onClose }: URLImportModalProps) {
       }
     }
     
+    if (!isVideoUrl(importUrl) && isElectronArticleImportAvailable) {
+      let completed = false;
+      const t1 = setTimeout(() => { if (!completed) setStage("analyzing"); }, 1500);
+      const t2 = setTimeout(() => { if (!completed) setStage("formatting"); }, 4000);
+      try {
+        const result = await window.tasteTrace!.importArticleRecipeLocal({ url: importUrl });
+        completed = true; clearTimeout(t1); clearTimeout(t2);
+        if (result.success && result.recipe) {
+          console.log("Local article recipe import succeeded:", { stage: result.stage, platform: getSourcePlatform(importUrl) });
+          setImportedRecipe(result.recipe as ParsedRecipe);
+          return;
+        }
+        throw new ImportFlowError(
+          getLocalParserErrorMessage(result.error?.code, result.error?.message),
+          result.error?.code,
+        );
+      } catch (articleError) {
+        completed = true; clearTimeout(t1); clearTimeout(t2);
+        console.log("Local article recipe import failed; falling back to cloud import:", {
+          code: articleError instanceof ImportFlowError ? articleError.code : "unknown",
+        });
+      }
+    }
+
     let completed = false;
     const t1 = setTimeout(() => { if (!completed) setStage("analyzing"); }, 1500);
     const t2 = setTimeout(() => { if (!completed) setStage("formatting"); }, 4000);

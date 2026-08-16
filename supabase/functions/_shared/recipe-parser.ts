@@ -95,22 +95,29 @@ function hasCyrillic(value: string): boolean {
 
 function inferCategoryHint(recipe: Record<string, unknown>): string {
   const text = recipeSearchText(recipe);
+  const title = String(recipe.title || "").toLowerCase();
   const ru = hasCyrillic(text);
 
-  if (/(drink|cocktail|smoothie|juice|tea|coffee|напит|коктейл|смузи|сок|чай|кофе)/iu.test(text)) {
-    return ru ? "Напитки" : "Drinks";
-  }
-  if (/(cake|cookie|dessert|ice cream|pudding|sweet|торт|печень|десерт|морожен|пудинг)/iu.test(text)) {
-    return ru ? "Десерты" : "Desserts";
-  }
-  if (/(bread|bun|pie|pastry|dough|baked|quiche|хлеб|булоч|пирог|тесто|выпеч|киш)/iu.test(text)) {
-    return ru ? "Мучные изделия" : "Baked goods";
-  }
-  if (/(soup|broth|borscht|stew|суп|бульон|борщ|щи)/iu.test(text)) {
+  if (/\b(?:soup|broth|borscht|stew)\b|(?:суп|бульон|борщ|щи)/iu.test(title)) {
     return ru ? "Первые блюда" : "Soups";
   }
-  if (/(steak|beef|pork|chicken|fish|salmon|main|entree|meat|говядин|свинин|куриц|рыб|стейк|мяс)/iu.test(text)) {
+  if (/\b(?:steak|beef|pork|chicken|fish|salmon|main|entree|meat)\b|(?:говядин|свинин|куриц|рыб|стейк|мяс)/iu.test(title)) {
     return ru ? "Вторые блюда" : "Main dishes";
+  }
+  if (/\b(?:cake|cookie|dessert|ice cream|pudding|sweet)\b|(?:торт|печень|десерт|морожен|пудинг)/iu.test(text)) {
+    return ru ? "Десерты" : "Desserts";
+  }
+  if (/\b(?:bread|bun|pie|pastry|dough|baked|quiche)\b|(?:хлеб|булоч|пирог|тесто|выпеч|киш)/iu.test(text)) {
+    return ru ? "Мучные изделия" : "Baked goods";
+  }
+  if (/\b(?:steak|beef|pork|chicken|fish|salmon|main|entree|meat)\b|(?:говядин|свинин|куриц|рыб|стейк|мяс)/iu.test(text)) {
+    return ru ? "Вторые блюда" : "Main dishes";
+  }
+  if (/\b(?:soup|broth|borscht|stew)\b|(?:суп|бульон|борщ|щи)/iu.test(text)) {
+    return ru ? "Первые блюда" : "Soups";
+  }
+  if (/\b(?:drink|cocktail|smoothie|juice|tea|coffee)\b|(?:напит|коктейл|смузи|сок|чай|кофе)/iu.test(text)) {
+    return ru ? "Напитки" : "Drinks";
   }
   return ru ? "Разное" : "Misc";
 }
@@ -118,7 +125,11 @@ function inferCategoryHint(recipe: Record<string, unknown>): string {
 function normalizeCategoryHint(recipe: Record<string, unknown>): string {
   const current = typeof recipe.category_hint === "string" ? recipe.category_hint.trim() : "";
   const text = recipeSearchText(recipe);
+  const title = String(recipe.title || "").toLowerCase();
   if (!current) return inferCategoryHint(recipe);
+  if (/^(?:drinks?|soups?|напитки|первые блюда)$/iu.test(current) && /\b(?:steak|beef|pork|chicken|fish|salmon|main|entree|meat)\b|(?:говядин|свинин|куриц|рыб|стейк|мяс)/iu.test(title)) {
+    return inferCategoryHint({ ...recipe, category_hint: "" });
+  }
 
   const currentWords = current.toLowerCase().match(/[\p{L}\p{N}]+/gu) || [];
   const hasOverlap = currentWords.some((word) => word.length >= 4 && text.includes(word));

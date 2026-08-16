@@ -3,6 +3,7 @@ const path = require("path");
 const { registerTranscriptionIpc } = require("./transcription.cjs");
 const { registerLocalRecipeParserIpc } = require("./local-recipe-parser.cjs");
 const { registerVideoRecipePipelineIpc } = require("./video-recipe-pipeline.cjs");
+const { registerArticleRecipePipelineIpc } = require("./article-recipe-pipeline.cjs");
 
 const SELECT_VIDEO_FILE_CHANNEL = "tasteTrace:selectVideoFile";
 const VIDEO_FILE_FILTERS = [
@@ -109,6 +110,7 @@ app.whenReady().then(() => {
   registerTranscriptionIpc(ipcMain, app);
   registerLocalRecipeParserIpc(ipcMain, app);
   registerVideoRecipePipelineIpc(ipcMain, app);
+  registerArticleRecipePipelineIpc(ipcMain, app);
   createWindow();
 });
 
