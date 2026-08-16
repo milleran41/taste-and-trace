@@ -266,6 +266,8 @@ function normalizeCategoryHint(recipe) {
 }
 
 function recipeFromJsonLd(item, url, html) {
+  if (!item || typeof item !== "object") return null;
+
   const recipe = {
     title: firstString(item.name) || extractTitle(html) || "Imported recipe",
     description: firstString(item.description),
@@ -289,6 +291,118 @@ function recipeFromJsonLd(item, url, html) {
   recipe.category_hint = normalizeCategoryHint(recipe);
   if (!recipe.description) recipe.description = recipe.instructions[0] || recipe.title;
   if (!recipe.ingredients.length || !recipe.instructions.length) return null;
+  return recipe;
+}
+
+function htmlToText(value) {
+  return cleanText(
+    String(value || "")
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, " ")
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, " ")
+      .replace(/<svg[^>]*>[\s\S]*?<\/svg>/gi, " ")
+      .replace(/<button[^>]*>[\s\S]*?<\/button>/gi, " ")
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/(?:p|li|h[1-6]|div)>/gi, "\n")
+      .replace(/<[^>]+>/g, " "),
+  );
+}
+
+function extractListItems(html, options = {}) {
+  const items = [];
+  for (const match of String(html || "").matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)) {
+    const preferred = options.preferEm ? match[1].match(/<em\b[^>]*>([\s\S]*?)<\/em>/i)?.[1] : "";
+    const text = htmlToText(preferred || match[1]);
+    if (text.length >= 3) items.push(text);
+  }
+  return items;
+}
+
+function findHeadingIndex(html, names, startIndex = 0) {
+  const patterns = names.map((name) => new RegExp(name, "iu"));
+  const source = String(html || "");
+  const headings = source.slice(startIndex).matchAll(/<h[1-6]\b[^>]*>[\s\S]*?<\/h[1-6]>/giu);
+  for (const match of headings) {
+    const headingText = htmlToText(match[0]);
+    if (patterns.some((pattern) => pattern.test(headingText))) {
+      return startIndex + (match.index || 0);
+    }
+  }
+  return -1;
+}
+
+function findNextHeadingIndex(html, startIndex = 0) {
+  const match = String(html || "").slice(startIndex).match(/<h[1-6]\b[^>]*>[\s\S]*?<\/h[1-6]>/iu);
+  return match?.index === undefined ? -1 : startIndex + match.index;
+}
+
+function extractHtmlSection(html, headingNames, nextHeadingNames = []) {
+  const start = findHeadingIndex(html, headingNames);
+  if (start < 0) return "";
+  const afterHeading = String(html).indexOf("</h", start);
+  const bodyStart = afterHeading < 0 ? start : String(html).indexOf(">", afterHeading) + 1;
+  const explicitEnd = nextHeadingNames.length ? findHeadingIndex(html, nextHeadingNames, bodyStart) : -1;
+  const nextHeading = findNextHeadingIndex(html, bodyStart);
+  const endCandidates = [explicitEnd, nextHeading].filter((index) => index > bodyStart);
+  const end = endCandidates.length ? Math.min(...endCandidates) : String(html).length;
+  return String(html).slice(bodyStart, end);
+}
+
+function parseServingsFromText(value) {
+  const match = String(value || "").match(/serves?\s+(\d{1,3}|one|two|three|four|five|six|seven|eight|nine|ten)|(\d{1,3})\s*(?:servings?|portions?)/iu);
+  if (!match) return null;
+  const wordNumbers = {
+    one: 1,
+    two: 2,
+    three: 3,
+    four: 4,
+    five: 5,
+    six: 6,
+    seven: 7,
+    eight: 8,
+    nine: 9,
+    ten: 10,
+  };
+  const valueText = String(match[1] || match[2] || "").toLowerCase();
+  return wordNumbers[valueText] || Number.parseInt(valueText, 10) || null;
+}
+
+function recipeFromHtmlSections(html, url) {
+  const ingredientsSection = extractHtmlSection(html, ["Ingredients", "Ингредиенты"], ["Process", "Method", "Instructions", "Directions", "Notes?", "Discussion"]);
+  const processSection = extractHtmlSection(html, ["Process", "Method", "Instructions", "Directions", "Приготовление", "Шаги"], ["Notes?", "Discussion"]);
+  const ingredients = extractListItems(ingredientsSection, { preferEm: true }).slice(0, 80);
+  const instructions = extractListItems(processSection).slice(0, 80);
+  if (ingredients.length < 3 || instructions.length < 2) return null;
+
+  const introHtml = String(html).slice(0, findHeadingIndex(html, ["Ingredients", "Ингредиенты"]));
+  const description =
+    htmlToText(introHtml)
+      .split("\n")
+      .map((line) => line.trim())
+      .find((line) => line.length >= 50 && !/javascript|subscribe|sign in|substack/iu.test(line)) ||
+    extractMetaContent(html, "description") ||
+    extractTitle(html);
+
+  const combinedText = htmlToText(`${ingredientsSection}\n${processSection}`);
+  const recipe = {
+    title: extractTitle(html) || "Imported recipe",
+    description,
+    ingredients,
+    instructions,
+    cooking_time: "",
+    servings: parseServingsFromText(combinedText),
+    difficulty: "medium",
+    tags: ["article", "draft"],
+    notes: "",
+    category_hint: "",
+    thumbnail: extractMetaContent(html, "og:image") || extractMetaContent(html, "twitter:image") || "",
+    source: {
+      sourceType: "article",
+      sourceUrl: url,
+      sourcePlatform: normalizePlatform(url),
+    },
+    localDraft: true,
+  };
+  recipe.category_hint = normalizeCategoryHint(recipe);
   return recipe;
 }
 
@@ -324,6 +438,15 @@ async function importArticleRecipeLocal(app, payload) {
       success: true,
       recipe: structuredRecipe,
       stage: "json_ld",
+    };
+  }
+
+  const sectionRecipe = recipeFromHtmlSections(html, url);
+  if (sectionRecipe) {
+    return {
+      success: true,
+      recipe: sectionRecipe,
+      stage: "html_sections",
     };
   }
 
