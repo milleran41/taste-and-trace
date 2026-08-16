@@ -60,6 +60,74 @@ export function normalizeDifficulty(value: unknown): string {
   return difficultyMap[value.toLowerCase()] || "medium";
 }
 
+function normalizeCookingTime(value: unknown): string {
+  if (typeof value !== "string") return "";
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  const isoMatch = trimmed.match(/^PT(?:(\d+)H)?(?:(\d+)M)?$/i);
+  if (!isoMatch) return trimmed;
+
+  const hours = Number.parseInt(isoMatch[1] || "0", 10);
+  const minutes = Number.parseInt(isoMatch[2] || "0", 10);
+  const parts: string[] = [];
+  if (hours > 0) parts.push(`${hours} hr`);
+  if (minutes > 0) parts.push(`${minutes} min`);
+  return parts.join(" ") || trimmed;
+}
+
+function recipeSearchText(recipe: Record<string, unknown>): string {
+  return [
+    recipe.title,
+    recipe.description,
+    ...(Array.isArray(recipe.ingredients) ? recipe.ingredients : []),
+    ...(Array.isArray(recipe.instructions) ? recipe.instructions : []),
+    ...(Array.isArray(recipe.tags) ? recipe.tags : []),
+  ]
+    .map((item) => String(item || ""))
+    .join(" ")
+    .toLowerCase();
+}
+
+function hasCyrillic(value: string): boolean {
+  return /[а-яё]/iu.test(value);
+}
+
+function inferCategoryHint(recipe: Record<string, unknown>): string {
+  const text = recipeSearchText(recipe);
+  const ru = hasCyrillic(text);
+
+  if (/(drink|cocktail|smoothie|juice|tea|coffee|напит|коктейл|смузи|сок|чай|кофе)/iu.test(text)) {
+    return ru ? "Напитки" : "Drinks";
+  }
+  if (/(cake|cookie|dessert|ice cream|pudding|sweet|торт|печень|десерт|морожен|пудинг)/iu.test(text)) {
+    return ru ? "Десерты" : "Desserts";
+  }
+  if (/(bread|bun|pie|pastry|dough|baked|quiche|хлеб|булоч|пирог|тесто|выпеч|киш)/iu.test(text)) {
+    return ru ? "Мучные изделия" : "Baked goods";
+  }
+  if (/(soup|broth|borscht|stew|суп|бульон|борщ|щи)/iu.test(text)) {
+    return ru ? "Первые блюда" : "Soups";
+  }
+  if (/(steak|beef|pork|chicken|fish|salmon|main|entree|meat|говядин|свинин|куриц|рыб|стейк|мяс)/iu.test(text)) {
+    return ru ? "Вторые блюда" : "Main dishes";
+  }
+  return ru ? "Разное" : "Misc";
+}
+
+function normalizeCategoryHint(recipe: Record<string, unknown>): string {
+  const current = typeof recipe.category_hint === "string" ? recipe.category_hint.trim() : "";
+  const text = recipeSearchText(recipe);
+  if (!current) return inferCategoryHint(recipe);
+
+  const currentWords = current.toLowerCase().match(/[\p{L}\p{N}]+/gu) || [];
+  const hasOverlap = currentWords.some((word) => word.length >= 4 && text.includes(word));
+  const looksSpecificDish = /quiche|pizza|burger|cake|soup|salad|pasta|steak|киш|пицц|бургер|торт|суп|салат|паст|стейк/iu.test(current);
+  if (looksSpecificDish && !hasOverlap) return inferCategoryHint(recipe);
+
+  return current;
+}
+
 function buildStrictRecipeSystemPrompt(context: RecipeParserContext = {}): string {
   const sourceUrl = context.sourceUrl || "";
   const languageNote = context.detectedLanguage
@@ -117,6 +185,9 @@ export function normalizeRecipe(parsedValue: unknown): Record<string, unknown> {
   if (!Array.isArray(parsed.instructions)) parsed.instructions = [];
   if (!Array.isArray(parsed.tags)) parsed.tags = [];
   parsed.difficulty = normalizeDifficulty(parsed.difficulty);
+  parsed.cooking_time = normalizeCookingTime(parsed.cooking_time);
+  parsed.notes = typeof parsed.notes === "string" ? parsed.notes : "";
+  parsed.category_hint = normalizeCategoryHint(parsed);
 
   return parsed;
 }
